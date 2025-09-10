@@ -1,0 +1,43 @@
+{
+  "name": "hiregenix-backend-ts",
+  "version": "1.0.0",
+  "description": "HIREGENIX REST API BACKEND",
+  "keywords": [
+    "hiregenix",
+    "backend",
+    "saas"
+  ],
+  "homepage": "https://github.com/Muhammad-Ahmad-7/Hiregenix-Backend-TS#readme",
+  "bugs": {
+    "url": "https://github.com/Muhammad-Ahmad-7/Hiregenix-Backend-TS/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Muhammad-Ahmad-7/Hiregenix-Backend-TS.git"
+  },
+  "license": "ISC",
+  "author": "Muhammad Ahmad",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "npm run clean && tsc",
+    "start": "node dist/server.js",
+    "dev": "concurrently \"tsc -w\" \"nodemon dist/server.js\"",
+    "lint": "eslint . --ext .ts",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.1",
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.1.10",
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0"
+  }
+}
