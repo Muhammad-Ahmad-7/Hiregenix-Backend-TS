@@ -1,109 +1,67 @@
-// src/models/candidate.model.ts
 import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface ICandidate extends Document {
     _id: Types.ObjectId;
-    email: string;
     name: string;
+    email: string;
     phone?: string;
-    authProvider?: "local" | "google" | "linkedin";
     passwordHash?: string;
+    authProvider?: "local" | "google" | "linkedin";
     profilePictureUrl?: string;
     headline?: string;
-    location?: { 
-        city?: string; 
-        country?: string; 
-        remote?: boolean 
-    };
-    resumeId?: Types.ObjectId; // link to resume doc
+    location?: { city?: string; country?: string; remote?: boolean };
+    resumeId?: Types.ObjectId; // quick link to resume
     skills: string[];
     experience: {
-        company?: string;
-        position?: string;
-        startDate?: Date;
+        company: string;
+        position: string;
+        startDate: Date;
         endDate?: Date | null;
         description?: string;
     }[];
     education: {
-        institution?: string;
-        degree?: string;
-        startYear?: number;
-        endYear?: number;
+        institution: string;
+        degree: string;
+        startYear: number;
+        endYear: number;
     }[];
-    embeddings?: number[]; // optional profile embedding
-    appliedJobs?: Types.ObjectId[]; // job ids
-    interviews?: Types.ObjectId[];  // interview ids
     createdAt?: Date;
     updatedAt?: Date;
 }
 
 const CandidateSchema = new Schema<ICandidate>({
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-        index: true
-    },
     name: { 
         type: String, 
-        required: true 
+        required: true
     },
-    phone: {
-        type: String,
-        required: true,
-        Unique: true
-    },
+    email: { 
+        type: String, 
+        required: true, 
+        unique: true, 
+        index: true },
+    phone: String,
+    passwordHash: String,
     authProvider: { 
         type: String, 
         enum: ["local", "google", "linkedin"], 
-        default: "local" 
-    },
-    passwordHash: String,
+        default: "local" },
     profilePictureUrl: String,
     headline: String,
-    location: { 
-        city: String, 
-        country: String, 
-        remote: Boolean 
-    },
-    resumeId: {
-        type: Schema.Types.ObjectId,
-        ref: "Resume" 
-    },
-    skills: {
-        type: [String], 
-        default: [] 
-    },
-    experience: { 
-        type: [{
-            company: String, 
-            position: String, 
-            startDate: Date, 
-            endDate: Date, 
-            description: String 
-        }], 
-        default: [] 
-    },
-    education: { 
-        type: [{ 
-            institution: String, 
-            degree: String, 
-            startYear: Number, 
-            endYear: Number 
-        }], 
-        default: [] 
-    },
-    embeddings: { 
-        type: [Number], 
-        default: undefined 
-    }, // vector
-    appliedJobs: [{ 
-        type: Schema.Types.ObjectId, 
-        ref: "Job" 
+    location: { city: String, country: String, remote: Boolean },
+    resumeId: { type: Schema.Types.ObjectId, ref: "Resume" },
+    skills: { type: [String], default: [] },
+    experience: [{
+        company: String,
+        position: String,
+        startDate: Date,
+        endDate: Date,
+        description: String
     }],
-    interviews: [{ 
-        type: Schema.Types.ObjectId, 
-        ref: "Interview" 
+    education: [{
+        institution: String,
+        degree: String,
+        startYear: Number,
+        endYear: Number
     }]
 }, { timestamps: true });
 
