@@ -7,11 +7,19 @@ import { config } from "../config/config.js";
 export interface IUser extends Document {
     email: string;
     username: string;
-    password: string;
-    role: "admin" | "user";
+    password?: string; // only for local
+    authProvider: "local" | "google" | "linkedin";
+    providerId?: string; // for google/linkedin
+    resetPasswordToken: string | null;
+    resetPasswordExpires: Date | null;
+    isVerified: boolean;
+    verificationToken: string | null;
+    verificationTokenExpires: Date | null;
+    role: "admin" | "candidate" | "company";
     refreshToken?: string;
     isPasswordCorrect(password: string): Promise<boolean>;
     generateAccessToken(): string;
+    generateRefreshToken(): string;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -30,33 +38,57 @@ const UserSchema = new Schema<IUser>(
         },
         password: {
             type: String,
-            required: [true, "Password is required"],
+            required: function () {
+                return this.authProvider === "local"; // password required only for local
+            },
             minlength: [8, "Password must be at least 8 characters long."],
         },
+        authProvider: {
+            type: String,
+            enum: ["local", "google", "linkedin"],
+            default: "local",
+        },
+        providerId: {
+            type: String, // store Google/LinkedIn id here
+        },
+        resetPasswordToken: { type: String, default: null },
+        resetPasswordExpires: { type: Date, default: null },
+        isVerified: {
+            type: Boolean,
+            default: false,
+        },
+        verificationToken: { type: String, default: null },
+        verificationTokenExpires: { type: Date, default: null },
         refreshToken: {
             type: String,
         },
         role: {
             type: String,
-            enum: ["admin", "user"],
-            default: "user",
+            enum: ["admin", "candidate", "company"],
+            default: "candidate",
         },
     },
     { timestamps: true }
 );
 
+
 // 🔐 Pre-save middleware for hashing password
 UserSchema.pre<IUser>("save", async function (next) {
+    if (this.authProvider !== "local") return next(); // skip hashing for Google/LinkedIn
     if (!this.isModified("password")) return next();
 
-    this.password = await bcrypt.hash(this.password, SALT_ROUND);
+    if (this.password) {
+        this.password = await bcrypt.hash(this.password, SALT_ROUND);
+    }
     next();
 });
+
 
 // 🔑 Method: check password correctness
 UserSchema.methods.isPasswordCorrect = async function (
     password: string
 ): Promise<boolean> {
+    if (!this.password) return false;
     return bcrypt.compare(password, this.password);
 };
 
@@ -64,10 +96,10 @@ interface JwtPayload {
     _id: string;
     email: string;
     username: string;
-    role: "admin" | "user";
+    role: "admin" | "candidate" | "company";
 }
 
-
+// 🔑 Generate Access Token
 UserSchema.methods.generateAccessToken = function (this: IUser): string {
     const payload: JwtPayload = {
         _id: this._id as string,
@@ -76,27 +108,18 @@ UserSchema.methods.generateAccessToken = function (this: IUser): string {
         role: this.role,
     };
 
-    return jwt.sign(
-        payload,
-        config.jwt.accessTokenSecret,
-        {
-            expiresIn: config.jwt.accessTokenExpiresIn,
-        } as jwt.SignOptions
-    );
+    return jwt.sign(payload, config.jwt.accessTokenSecret, {
+        expiresIn: config.jwt.accessTokenExpiresIn,
+    } as jwt.SignOptions);
 };
 
+// 🔑 Generate Refresh Token
 UserSchema.methods.generateRefreshToken = function (this: IUser): string {
-    const payload = {
-        _id: this._id,
-    };
+    const payload = { _id: this._id as string };
 
-    return jwt.sign(
-        payload,
-        config.jwt.refreshTokenSecret,
-        {
-            expiresIn: config.jwt.refreshTokenExpiresIn,
-        } as jwt.SignOptions
-    );
+    return jwt.sign(payload, config.jwt.refreshTokenSecret, {
+        expiresIn: config.jwt.refreshTokenExpiresIn,
+    } as jwt.SignOptions);
 };
 
 export const User = mongoose.model<IUser>("User", UserSchema);

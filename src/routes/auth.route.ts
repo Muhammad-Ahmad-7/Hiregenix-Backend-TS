@@ -1,13 +1,13 @@
 import express from 'express';
-import { login, signup } from '../controllers/auth.controller.js';
-import { asyncHandler } from '../utils/asyncHandler.js';
+import { login, signup, verifyEmail } from '../controllers/auth.controller.js';
 import { validateRequest } from '../middlewares/validate.middleware.js';
-import { signupSchema } from '../validators/user.validator.js';
+import { loginSchema, signupSchema } from '../validators/user.validator.js';
 
 const authRouter = express.Router();
 
 
-authRouter.post('/login', login);
+authRouter.post('/login', validateRequest(loginSchema), login);
 authRouter.post('/signup', validateRequest(signupSchema), signup);
+authRouter.post('/verify-email/:token', verifyEmail);
 
 export default authRouter;

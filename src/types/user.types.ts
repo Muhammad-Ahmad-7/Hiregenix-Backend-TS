@@ -16,4 +16,10 @@ export interface IUserInput {
     username: string;
     email: string;
     password: string;
+    role: 'candidate' | 'company' | 'admin';
+}
+
+export interface IUserLogin {
+    email: string;
+    password: string;
 }

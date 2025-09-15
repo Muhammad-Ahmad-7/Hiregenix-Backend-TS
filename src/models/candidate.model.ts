@@ -2,11 +2,8 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface ICandidate extends Document {
     _id: Types.ObjectId;
-    name: string;
-    email: string;
+    userId: Types.ObjectId,
     phone?: string;
-    passwordHash?: string;
-    authProvider?: "local" | "google" | "linkedin";
     profilePictureUrl?: string;
     headline?: string;
     location?: { city?: string; country?: string; remote?: boolean };
@@ -30,21 +27,8 @@ export interface ICandidate extends Document {
 }
 
 const CandidateSchema = new Schema<ICandidate>({
-    name: { 
-        type: String, 
-        required: true
-    },
-    email: { 
-        type: String, 
-        required: true, 
-        unique: true, 
-        index: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User' },
     phone: String,
-    passwordHash: String,
-    authProvider: { 
-        type: String, 
-        enum: ["local", "google", "linkedin"], 
-        default: "local" },
     profilePictureUrl: String,
     headline: String,
     location: { city: String, country: String, remote: Boolean },
