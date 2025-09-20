@@ -29,6 +29,7 @@
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.7",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.9",
     "@types/cors": "^2.8.19",
@@ -44,6 +45,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "amqplib": "^0.10.9",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
