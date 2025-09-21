@@ -48,6 +48,7 @@ const signup = asyncHandler(async (req: Request, res: Response) => {
         verificationTokenExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
     })
 
+
     try {
         // Send verification email
         await EmailService.sendVerificationEmail(email, username, verificationToken);
@@ -123,7 +124,15 @@ const login = asyncHandler(async (req: Request, res: Response) => {
     }
 
     const accessToken = user.generateAccessToken()
-    return responseHelper(res, 200, "Success", "Login successful.", { data: accessToken })
+    return responseHelper(res, 200, "Success", "Login successful.", {
+        data: {
+            accessToken,
+            user: {
+                id: user._id,
+                username: user.username,
+            }
+        }
+    })
 })
 
 

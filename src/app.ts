@@ -4,6 +4,7 @@ import cookiesParser from "cookie-parser";
 import authRouter from "./routes/auth.route.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { config } from "./config/config.js";
+import candidateRouter from "./routes/candidate.route.js";
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(cors({
 app.use(cookiesParser())
 
 app.use("/api/v1/auth", authRouter)
+app.use("/api/v1/candidate", candidateRouter)
 
 app.use(errorMiddleware)
 app.get("/", (req, res) => {
