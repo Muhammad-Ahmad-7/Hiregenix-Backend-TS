@@ -23,3 +23,11 @@ export function getChannel(): amqb.Channel {
     }
     return channel;
 }
+
+export function sendToQueue(queue: string, taskId: string) {
+    if (!channel) {
+        throw new Error("RabbitMQ channel not initialized. Make sure connectToRabbitMQ() is called first.");
+    }
+    channel.sendToQueue(queue, Buffer.from(taskId), { persistent: true });
+    console.log(`Sent task ${taskId} to queue ${queue}`);
+}

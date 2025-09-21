@@ -3,7 +3,7 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 export interface IResume extends Document {
     _id: Types.ObjectId;
     candidateId: Types.ObjectId; // reference to Candidate
-    fileUrl?: string; // uploaded resume file (S3, GCS, etc.)
+    fileUrl?: string;
     parsedData: {
         name?: string;
         email?: string;
@@ -11,35 +11,35 @@ export interface IResume extends Document {
         linkedin?: string;
         github?: string;
         portfolio?: string;
-        summary?: string; // extracted bio/summary
+        summary?: string;
         skills?: string[];
         experience?: {
-            company: string;
-            position: string;
-            startDate?: Date;
+            company?: string;
+            position?: string;
+            startDate?: Date | null;
             endDate?: Date | null;
             description?: string;
         }[];
         education?: {
-            institution: string;
-            degree: string;
-            startYear?: number;
-            endYear?: number;
+            institution?: string;
+            degree?: string;
+            startYear?: number | null;
+            endYear?: number | null;
         }[];
         projects?: {
-            name: string;
+            name?: string;
             description?: string;
             link?: string;
             technologies?: string[];
         }[];
         certifications?: {
-            name: string;
+            name?: string;
             issuer?: string;
-            year?: number;
+            year?: number | null;
         }[];
     };
-    aiScore?: number; // AI-driven resume score
-    aiSuggestions?: string[]; // AI-generated suggestions for improvement
+    aiScore?: number;
+    aiSuggestions?: string[];
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -47,51 +47,63 @@ export interface IResume extends Document {
 const ResumeSchema = new Schema<IResume>(
     {
         candidateId: { type: Schema.Types.ObjectId, ref: "Candidate", required: true },
-        fileUrl: String,
+        fileUrl: { type: String, default: null },
         parsedData: {
-            name: String,
-            email: String,
-            phone: String,
-            linkedin: String,
-            github: String,
-            portfolio: String,
-            summary: String,
-            skills: [String],
-            experience: [
-                {
-                    company: String,
-                    position: String,
-                    startDate: Date,
-                    endDate: Date,
-                    description: String,
-                },
-            ],
-            education: [
-                {
-                    institution: String,
-                    degree: String,
-                    startYear: Number,
-                    endYear: Number,
-                },
-            ],
-            projects: [
-                {
-                    name: String,
-                    description: String,
-                    link: String,
-                    technologies: [String],
-                },
-            ],
-            certifications: [
-                {
-                    name: String,
-                    issuer: String,
-                    year: Number,
-                },
-            ],
+            name: { type: String, default: null },
+            email: { type: String, default: null },
+            phone: { type: String, default: null },
+            linkedin: { type: String, default: null },
+            github: { type: String, default: null },
+            portfolio: { type: String, default: null },
+            summary: { type: String, default: null },
+            skills: { type: [String], default: [] },
+            experience: {
+                type: [
+                    {
+                        company: { type: String, default: null },
+                        position: { type: String, default: null },
+                        startDate: { type: Date, default: null },
+                        endDate: { type: Date, default: null },
+                        description: { type: String, default: null },
+                    },
+                ],
+                default: [],
+            },
+            education: {
+                type: [
+                    {
+                        institution: { type: String, default: null },
+                        degree: { type: String, default: null },
+                        startYear: { type: Number, default: null },
+                        endYear: { type: Number, default: null },
+                    },
+                ],
+                default: [],
+            },
+            projects: {
+                type: [
+                    {
+                        name: { type: String, default: null },
+                        description: { type: String, default: null },
+                        link: { type: String, default: null },
+                        technologies: { type: [String], default: [] },
+                    },
+                ],
+                default: [],
+            },
+            certifications: {
+                type: [
+                    {
+                        name: { type: String, default: null },
+                        issuer: { type: String, default: null },
+                        year: { type: Number, default: null },
+                    },
+                ],
+                default: [],
+            },
         },
-        aiScore: Number,
-        aiSuggestions: [String],
+        aiScore: { type: Number, default: null },
+        aiSuggestions: { type: [String], default: [] },
     },
     { timestamps: true }
 );

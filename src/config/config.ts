@@ -32,6 +32,11 @@ interface Config {
     frontend: {
         url: string | undefined;
     };
+    cloudinary: {
+        cloudName: string | undefined;
+        apiKey: string | undefined;
+        apiSecret: string | undefined;
+    }
 }
 
 export const config: Config = {
@@ -57,4 +62,9 @@ export const config: Config = {
     frontend: {
         url: process.env.FRONTEND_URL,
     },
+    cloudinary: {
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+        apiKey: process.env.CLOUDINARY_API_KEY,
+        apiSecret: process.env.CLOUDINARY_API_SECRET,
+    }
 };
