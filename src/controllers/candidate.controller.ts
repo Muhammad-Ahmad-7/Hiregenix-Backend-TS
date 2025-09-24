@@ -7,6 +7,12 @@ import cloudinary from "../config/cloudinary.js";
 
 import fs from "fs";
 import { TaskModel } from "../models/task.model.js";
+
+
+const completeCandidateProfile = asyncHandler(async (req: Request, res: Response) => {
+
+});
+
 const resumeParser = asyncHandler(async (req: Request, res: Response) => {
     console.log("Received resume parse request:", req.body);
     const file = req.file;
@@ -52,4 +58,4 @@ const resumeParser = asyncHandler(async (req: Request, res: Response) => {
     });
 });
 
-export { resumeParser };
+export { resumeParser, completeCandidateProfile };

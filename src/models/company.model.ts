@@ -16,12 +16,18 @@ export interface ICompany extends Document {
 
 const CompanySchema = new Schema<ICompany>({
     userId: { type: Schema.Types.ObjectId, ref: 'User' },
-    companyName: { type: String, required: true },
-    logoUrl: String,
-    website: String,
+    companyName: { type: String },
+    logoUrl: { type: String, default: null },
+    website: { type: String, default: null },
     location: {
-        city: String,
-        country: String
+        city: {
+            type: String,
+            default: null
+        },
+        country: {
+            type: String,
+            default: null
+        }
     }
 }, { timestamps: true });
 

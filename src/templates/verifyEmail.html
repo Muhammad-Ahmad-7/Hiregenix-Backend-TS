@@ -7,30 +7,66 @@
             margin: 0 auto;
             font-family: Arial, sans-serif;
             padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2A5BD7;
         }
 
         .button {
-            background-color: #4CAF50;
+            background-color: #698eea;
             border: none;
             color: white;
-            padding: 15px 32px;
+            padding: 14px 28px;
             text-align: center;
             text-decoration: none;
             display: inline-block;
             font-size: 16px;
-            margin: 4px 2px;
-            border-radius: 4px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+
+        .footer {
+            font-size: 13px;
+            color: #777;
+            margin-top: 40px;
+            text-align: center;
         }
     </style>
 </head>
 
 <body>
     <div class="email-container">
-        <h2>Verify Your Email</h2>
-        <p>Hello {{name}},</p>
-        <p>Thank you for registering! Please click the button below to verify your email address:</p>
-        <a href="{{verificationLink}}" class="button">Verify Email</a>
-        <p>If you didn't create an account, you can safely ignore this email.</p>
+        <div class="header">
+            <div class="brand">Hiregenx</div>
+        </div>
+
+        <h2>Verify Your Email Address</h2>
+        <p>Hi {{name}},</p>
+
+        <p>Welcome to <strong>Hiregenx</strong> — your AI-powered recruitment partner.
+            To get started and unlock your personalized hiring or job-seeking experience, please verify your email
+            address.</p>
+
+        <div style="text-align: center;">
+            <a href="{{verificationLink}}" class="button">Verify Email</a>
+        </div>
+
+        <p>If you did not sign up for Hiregenx, you can safely ignore this email.</p>
+
+        <div class="footer">
+            <p>© {{year}} Hiregenx. All rights reserved.<br>
+                Smarter hiring, powered by AI.</p>
+        </div>
     </div>
 </body>
 

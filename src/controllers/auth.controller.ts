@@ -11,21 +11,12 @@ import CompanyModel from "../models/company.model.js";
 
 const signup = asyncHandler(async (req: Request, res: Response) => {
 
-    const { username, email, password, role }: IUserInput = req.body
+    const { email, password, role }: IUserInput = req.body
 
     let existingUser = await User.findOne({ 'email': email })
 
     if (existingUser) {
         return responseHelper(res, 400, "Failed", "Invalid registration details.")
-    }
-
-    existingUser = await User.findOne({ 'username': username });
-
-    if (existingUser) {
-        if (role === 'company') {
-            return responseHelper(res, 400, "Failed", "Company Name already exist.")
-        }
-        return responseHelper(res, 400, "Failed", "Username already exist.")
     }
 
     // Verify SMTP connection
@@ -40,7 +31,7 @@ const signup = asyncHandler(async (req: Request, res: Response) => {
 
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const user = await User.create({
-        username,
+
         email,
         password,
         verificationToken,
@@ -51,7 +42,7 @@ const signup = asyncHandler(async (req: Request, res: Response) => {
 
     try {
         // Send verification email
-        await EmailService.sendVerificationEmail(email, username, verificationToken);
+        await EmailService.sendVerificationEmail(email, "User", verificationToken);
 
         return responseHelper(res, 201, "Success", "Registration successful. Please check your email to verify your account.")
     } catch (emailError) {
@@ -64,7 +55,6 @@ const signup = asyncHandler(async (req: Request, res: Response) => {
         return responseHelper(res, 201, "success", "Account created but verification email could not be sent. Please contact support.")
     }
 })
-
 
 const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
     const { token } = req.params
@@ -106,8 +96,12 @@ const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
     }
 
     // Admin Profile creation can be handled here if needed
-
-    return responseHelper(res, 200, "Success", "Email verified successfully. Your account is now active.")
+    const accessToken = user.generateAccessToken()
+    return responseHelper(res, 200, "Success", "Email verified successfully. Your account is now active.", {
+        data: {
+            accessToken
+        }
+    })
 })
 
 const login = asyncHandler(async (req: Request, res: Response) => {
@@ -134,7 +128,5 @@ const login = asyncHandler(async (req: Request, res: Response) => {
         }
     })
 })
-
-
 
 export { login, signup, verifyEmail };

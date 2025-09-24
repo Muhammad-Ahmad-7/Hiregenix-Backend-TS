@@ -60,7 +60,7 @@ export class EmailService {
             });
 
             const mailOptions = {
-                from: `"FredAbod" <${config.email.user}>`,
+                from: `"hiregenX" <${config.email.user}>`,
                 to,
                 subject: 'Verify Your Email',
                 html,

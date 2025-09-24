@@ -7,10 +7,10 @@ dotenv.config();
 
 const PORT = config.port
 
-connectToRabbitMQ().catch((err) => {
-    console.error("Failed to connect to RabbitMQ", err);
-    process.exit(1);
-});
+// connectToRabbitMQ().catch((err) => {
+//     console.error("Failed to connect to RabbitMQ", err);
+//     process.exit(1);
+// });
 
 
 connectDB()
