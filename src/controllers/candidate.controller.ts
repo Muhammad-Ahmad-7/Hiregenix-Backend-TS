@@ -7,10 +7,61 @@ import cloudinary from "../config/cloudinary.js";
 
 import fs from "fs";
 import { TaskModel } from "../models/task.model.js";
+import CandidateModel from "../models/candidate.model.js";
 
 
 const completeCandidateProfile = asyncHandler(async (req: Request, res: Response) => {
+    const { fullName, dateOfBirth, gender, country, city, contactNumber, profilePictureUrl, githubUrl, linkedinUrl, portfolioUrl, skills, bio, tagline } = req.body;
 
+
+    const existingCandidate = await CandidateModel.findOne({ userId: req.user._id });
+
+    if (!existingCandidate) {
+        return responseHelper(res, 400, "Failed", "First Signup then create profile.");
+    }
+
+    if (existingCandidate.isProfileCompleted) {
+        return responseHelper(res, 400, "Failed", "Profile already completed.");
+    }
+
+    const existingCandidateWithPhone = await CandidateModel.findOne({ contactNumber });
+    if (existingCandidateWithPhone) {
+        return responseHelper(res, 400, "Failed", "Candidate with this phone number already exists.");
+    }
+
+    const updatedCandidate = await CandidateModel.findByIdAndUpdate(
+        existingCandidate._id,
+        {
+            fullName,
+            dateOfBirth,
+            gender,
+            country,
+            city,
+            contactNumber,
+            profilePictureUrl,
+            githubUrl,
+            linkedinUrl,
+            portfolioUrl,
+            skills,
+            bio,
+            tagline,
+            resumeId: null,
+        },
+        { new: true }
+    ).populate("userId", "email role");
+
+
+    if (!updatedCandidate) {
+        return responseHelper(res, 500, "Failed", "Failed to update candidate profile.");
+    }
+
+    const candidate = await CandidateModel.findById(updatedCandidate._id).populate("userId", "email role");
+
+    return responseHelper(res, 200, "Success", "Candidate profile created successfully.", {
+        data: {
+            candidate
+        }
+    });
 });
 
 const resumeParser = asyncHandler(async (req: Request, res: Response) => {
