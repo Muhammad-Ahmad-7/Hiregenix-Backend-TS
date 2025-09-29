@@ -4,26 +4,20 @@ export interface ICandidate extends Document {
     _id: Types.ObjectId;
     userId: Types.ObjectId,
     fullName?: string;
-    phone?: string;
+    dateOfBirth: Date;
+    gender: "male" | "female" | "other";
+    contactNumber?: string;
     profilePictureUrl?: string;
-    headline?: string;
-    location?: { city?: string; country?: string; remote?: boolean };
+    bio?: string;
+    city?: string;
+    country?: string;
+    githubUrl?: string;
+    linkedinUrl?: string;
+    portfolioUrl?: string;
     resumeId?: Types.ObjectId; // quick link to resume
     skills: string[];
     isProfileCompleted: boolean,
-    experience: {
-        company: string;
-        position: string;
-        startDate: Date;
-        endDate?: Date | null;
-        description?: string;
-    }[];
-    education: {
-        institution: string;
-        degree: string;
-        startYear: number;
-        endYear: number;
-    }[];
+    tagline?: string;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -37,81 +31,62 @@ const CandidateSchema = new Schema<ICandidate>({
         type: String,
         default: null
     },
-    phone: {
+    dateOfBirth: {
+        type: Date,
+        default: null
+    },
+    gender: {
         type: String,
+        enum: ["male", "female", "other"],
+        default: null
+    },
+    country: {
+        type: String,
+        default: null
+    },
+    city: {
+        type: String,
+        default: null
+    },
+    contactNumber: {
+        type: String,
+        unique: true,
         default: null
     },
     profilePictureUrl: {
         type: String,
         default: null
     },
-    headline: {
+    githubUrl: {
         type: String,
         default: null
     },
-    location: {
-        city: {
-            type: String,
-            default: null
-        },
-        country: {
-            type: String,
-            default: null
-        },
-        remote: {
-            type: Boolean,
-            default: false
-        }
+    linkedinUrl: {
+        type: String,
+        default: null
+    },
+    portfolioUrl: {
+        type: String,
+        default: null
+    },
+    skills: { type: [String], default: [] },
+    bio: {
+        type: String,
+        default: null
+    },
+    tagline: {
+        type: String,
+        default: null
     },
     resumeId: {
         type: Schema.Types.ObjectId,
-        ref: "Resume"
+        ref: "Resume",
+        default: null,
     },
-    skills: { type: [String], default: [] },
     isProfileCompleted: {
         type: Boolean,
         default: false,
     },
-    experience: [{
-        company: {
-            type: String,
-            default: null
-        },
-        position: {
-            type: String,
-            default: null
-        },
-        startDate: {
-            type: Date,
-            default: null
-        },
-        endDate: {
-            type: Date,
-            default: null
-        },
-        description: {
-            type: String,
-            default: null
-        }
-    }],
-    education: [{
-        institution: {
-            type: String,
-            default: null
-        },
-        degree: {
-            type: String,
-            default: null
-        },
-        startYear: {
-            type: Number,
-            default: null
-        },
-        endYear: {
-            type: Number,
-            default: null
-        }
-    }]
 }, { timestamps: true });
 
 export const CandidateModel = mongoose.model<ICandidate>("Candidate", CandidateSchema);
