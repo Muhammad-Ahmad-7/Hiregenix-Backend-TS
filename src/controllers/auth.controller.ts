@@ -123,7 +123,8 @@ const login = asyncHandler(async (req: Request, res: Response) => {
             accessToken,
             user: {
                 id: user._id,
-                username: user.username,
+                email: user.email,
+                role: user.role
             }
         }
     })
