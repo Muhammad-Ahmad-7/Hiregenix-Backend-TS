@@ -1,20 +1,19 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IJob extends Document {
-    _id: Types.ObjectId;
     companyId: Types.ObjectId;
     title: string;
     originalDescription: string;
     aiEnhancedDescription?: string;
     requirements?: string[];
-    location?: { 
-        city?: string; 
-        remote?: boolean 
+    location?: {
+        city?: string;
+        remote?: boolean
     };
-    salaryRange?: { 
-        min?: number; 
-        max?: number; 
-        currency?: string 
+    salaryRange?: {
+        min?: number;
+        max?: number;
+        currency?: string
     };
     deadline?: Date;
     status?: "open" | "closed";
@@ -24,39 +23,39 @@ export interface IJob extends Document {
 }
 
 const JobSchema = new Schema<IJob>({
-    companyId: { 
-        type: Schema.Types.ObjectId, 
-        ref: "Company", 
-        required: true 
+    companyId: {
+        type: Schema.Types.ObjectId,
+        ref: "Company",
+        required: true
     },
-    title: { 
-        type: String, 
-        required: true 
+    title: {
+        type: String,
+        required: true
     },
-    originalDescription: { 
-        type: String, 
-        required: true 
+    originalDescription: {
+        type: String,
+        required: true
     },
     aiEnhancedDescription: String,
     requirements: [String],
-    location: { 
-        city: String, 
-        remote: Boolean 
+    location: {
+        city: String,
+        remote: Boolean
     },
-    salaryRange: { 
-        min: Number, 
-        max: Number, 
-        currency: String 
+    salaryRange: {
+        min: Number,
+        max: Number,
+        currency: String
     },
     deadline: Date,
-    status: { 
-        type: String, 
-        enum: ["open", "closed"], 
-        default: "open" 
+    status: {
+        type: String,
+        enum: ["open", "closed"],
+        default: "open"
     },
-    embeddings: { 
-        type: [Number], 
-        default: undefined 
+    embeddings: {
+        type: [Number],
+        default: undefined
     }
 }, { timestamps: true });
 

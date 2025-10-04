@@ -52,4 +52,9 @@ const completeCompanyProfile = asyncHandler(async (req: Request, res: Response) 
 })
 
 
+const createJob = asyncHandler(async (req: Request, res: Response) => {
+
+})
+
+
 export { completeCompanyProfile }
