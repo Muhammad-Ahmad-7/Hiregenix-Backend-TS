@@ -16,6 +16,7 @@ export interface ICompany extends Document {
     isVerified: boolean;
     hiringStatus: "actively_hiring" | "paused" | "not_hiring";
     ntnNumber: string;
+    isDeleted?: string;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -79,6 +80,10 @@ const CompanySchema = new Schema<ICompany>({
         type: String,
         default: null,
         unique: true
+    },
+    isDeleted: {
+        type: String,
+        default: false,
     }
 }, { timestamps: true });
 

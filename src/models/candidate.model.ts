@@ -18,6 +18,7 @@ export interface ICandidate extends Document {
     skills: string[];
     isProfileCompleted: boolean,
     tagline?: string;
+    isDeleted?: string;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -87,6 +88,10 @@ const CandidateSchema = new Schema<ICandidate>({
         type: Boolean,
         default: false,
     },
+    isDeleted: {
+        type: String,
+        default: false,
+    }
 }, { timestamps: true });
 
 export const CandidateModel = mongoose.model<ICandidate>("Candidate", CandidateSchema);
