@@ -19,6 +19,9 @@ export interface ICandidate extends Document {
     isProfileCompleted: boolean,
     tagline?: string;
     isDeleted?: string;
+    aiDescription: string;
+    embeddingSync: boolean;
+    qdrantId?: string;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -91,6 +94,18 @@ const CandidateSchema = new Schema<ICandidate>({
     isDeleted: {
         type: String,
         default: false,
+    },
+    aiDescription: {
+        type: String,
+        default: null,
+    },
+    embeddingSync: {
+        type: Boolean,
+        default: false,
+    },
+    qdrantId: {
+        type: String,
+        default: null,
     }
 }, { timestamps: true });
 

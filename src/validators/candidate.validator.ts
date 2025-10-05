@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const candidateProfileCreationSchema = z.object({
     fullName: z.string().min(2).max(100),
-    dateOfBirth: z.date(),
+    dateOfBirth: z.coerce.date(),
     gender: z.enum(["male", "female", "other"]),
     country: z.string().min(2).max(100),
     city: z.string().min(2).max(100),

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import responseHelper from "../utils/responseHelper.js";
 import { getChannel, sendToQueue } from "../config/rabbitmq.js";
-import { RESUME_QUEUE } from "../utils/constant.js";
+import { CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, RESUME_QUEUE } from "../utils/constant.js";
 import cloudinary from "../config/cloudinary.js";
 
 import fs from "fs";
@@ -56,6 +56,32 @@ const completeCandidateProfile = asyncHandler(async (req: Request, res: Response
     }
 
     const candidate = await CandidateModel.findById(updatedCandidate._id).populate("userId", "email role");
+
+    if (!candidate) {
+        return responseHelper(res, 500, "Failed", "Failed to fetch candidate profile.");
+    }
+
+
+    const task = await TaskModel.create({
+
+        userId: req.user._id,
+        type: "candidate_profile_embeddings",
+        payload: { candidateId: candidate._id.toString() },
+        status: "pending",
+    });
+
+    if (!task) {
+        console.log("ERROR :: Task not created")
+        return;
+    }
+
+    try {
+        // Use the safe getChannel function
+        sendToQueue(CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, (task._id as string).toString());
+        console.log("Message sent to RabbitMQ queue successfully");
+    } catch (error) {
+        console.error("RabbitMQ error:", error);
+    }
 
     return responseHelper(res, 200, "Success", "Candidate profile created successfully.", {
         data: {

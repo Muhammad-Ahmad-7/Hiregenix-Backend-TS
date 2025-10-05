@@ -17,7 +17,6 @@ export interface IJob extends Document {
     };
     deadline?: Date;
     status?: "open" | "closed";
-    embeddings?: number[];
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -53,10 +52,6 @@ const JobSchema = new Schema<IJob>({
         enum: ["open", "closed"],
         default: "open"
     },
-    embeddings: {
-        type: [Number],
-        default: undefined
-    }
 }, { timestamps: true });
 
 export const JobModel = mongoose.model<IJob>("Job", JobSchema);
