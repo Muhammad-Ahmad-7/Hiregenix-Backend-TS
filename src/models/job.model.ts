@@ -3,19 +3,26 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 export interface IJob extends Document {
     companyId: Types.ObjectId;
     title: string;
-    originalDescription: string;
-    aiEnhancedDescription?: string;
+    role: string;
+    interviewGuideline: string;
+    experienceLevel: "entry" | "mid" | "senior";
+    description: string;
+    requiredSkills: string[];
+    workMode: "full-time" | "part-time" | "remote";
+    aiSummary?: string;
+    embeddingSynced?: boolean;
+    qdrantId?: string;
     requirements?: string[];
     location?: {
         city?: string;
-        remote?: boolean
+        country?: string;
     };
     salaryRange?: {
         min?: number;
         max?: number;
         currency?: string
     };
-    deadline?: Date;
+    isDeleted?: boolean;
     status?: "open" | "closed";
     createdAt?: Date;
     updatedAt?: Date;
@@ -31,22 +38,67 @@ const JobSchema = new Schema<IJob>({
         type: String,
         required: true
     },
-    originalDescription: {
+    role: {
         type: String,
         required: true
     },
-    aiEnhancedDescription: String,
-    requirements: [String],
+    interviewGuideline: {
+        type: String,
+        required: true
+    },
+    experienceLevel: {
+        type: String,
+        enum: ["entry", "mid", "senior"],
+        required: true
+    },
+    description: {
+        type: String,
+        required: true
+    },
+    requiredSkills: {
+        type: [String],
+        required: true
+    },
+    requirements: {
+        type: [String],
+        required: false
+    },
+    workMode: {
+        type: String,
+        enum: ["full-time", "part-time", "remote"],
+        required: true
+    },
     location: {
-        city: String,
-        remote: Boolean
+        city: {
+            type: String,
+            required: true
+        },
+        country: {
+            type: String,
+            required: true
+        }
     },
     salaryRange: {
         min: Number,
         max: Number,
         currency: String
     },
-    deadline: Date,
+    aiSummary: { // using llm to generate the summary of job for vectorization.
+        type: String,
+        default: "",
+    },
+    embeddingSynced: {
+        type: Boolean,
+        default: false,
+    },
+    qdrantId: {
+        type: String,
+        default: null,
+    },
+    isDeleted: {
+        type: Boolean,
+        default: false
+    },
     status: {
         type: String,
         enum: ["open", "closed"],

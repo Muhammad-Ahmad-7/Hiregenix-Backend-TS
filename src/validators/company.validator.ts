@@ -16,3 +16,33 @@ export const companyProfileCreationSchema = z.object({
     hiringStatus: z.enum(["actively_hiring", "paused", "not_hiring"]),
     ntnNumber: z.string().min(2).max(100).optional(),
 })
+
+export const jobCreationSchema = z.object({
+    title: z.string().min(2).max(100),
+    role: z.string().min(2).max(100),
+    interviewGuideline: z.string().min(2).max(500),
+
+    experienceLevel: z.enum(["entry", "mid", "senior"]),
+
+    description: z.string().min(2).max(500),
+
+    requiredSkills: z.array(z.string().min(2).max(20)),
+
+
+    workMode: z.enum(["full-time", "part-time", "remote"]),
+
+
+    location: z.object({
+        city: z.string().min(2).max(100),
+        country: z.string().min(2).max(100),
+    }),
+
+    salaryRange: z.object({
+        min: z.number(),
+        max: z.number(),
+        currency: z.string().min(2).max(10),
+    }),
+
+    requirements: z.array(z.string().min(2).max(500)),
+
+})
