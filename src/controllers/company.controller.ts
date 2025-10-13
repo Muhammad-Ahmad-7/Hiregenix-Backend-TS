@@ -74,8 +74,13 @@ const createJob = asyncHandler(async (req: Request, res: Response) => {
         status
     } = req.body;
 
-    const companyId = req.user._id;
+    const existingCompany = await CompanyModel.findOne({ userId: req.user._id });
 
+    if (!existingCompany) {
+        return responseHelper(res, 400, "Failed", "Company profile not found.")
+    }
+
+    const companyId = existingCompany._id;
 
     const newJob = await JobModel.create({
         title,
