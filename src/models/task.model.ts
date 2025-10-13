@@ -16,7 +16,7 @@ const TaskSchema = new Schema<ITask>(
         userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
         type: {
             type: String,
-            enum: ["resume_parsing", "profile_enhancement", "resume_feedback", "interview_prep", "candidate_profile_embeddings", "job_description_embeddings"],
+            enum: ["resume_parsing", "profile_enhancement", "resume_feedback", "interview_prep", "candidate_profile_embeddings", "job_description_embeddings", "job_recommendation"],
             required: true,
         },
         payload: { type: Schema.Types.Mixed, required: true }, // flexible JSON
