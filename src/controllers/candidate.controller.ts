@@ -8,6 +8,7 @@ import cloudinary from "../config/cloudinary.js";
 import fs from "fs";
 import { TaskModel } from "../models/task.model.js";
 import CandidateModel from "../models/candidate.model.js";
+import { RecommendedJobModel } from "../models/recommended_jobs.model.js";
 
 
 const completeCandidateProfile = asyncHandler(async (req: Request, res: Response) => {
@@ -135,4 +136,40 @@ const resumeParser = asyncHandler(async (req: Request, res: Response) => {
     });
 });
 
-export { resumeParser, completeCandidateProfile };
+const getRecommendedJobs = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user._id;
+
+    if (!userId) {
+        return responseHelper(res, 400, "Failed", "User not found.");
+    }
+
+    const candidate = await CandidateModel.findOne({ userId });
+
+    if (!candidate) {
+        return responseHelper(res, 400, "Failed", "Candidate not found.");
+    }
+
+    console.log("found candidate", candidate)
+
+    const candidateId = candidate._id.toString();
+
+    console.log("candidateId", candidateId)
+
+
+    const recommendedJobs = await RecommendedJobModel.findOne({ candidateId: candidateId });
+
+    console.log("recommendedJobs", recommendedJobs)
+
+    if (!recommendedJobs) {
+        return responseHelper(res, 400, "Failed", "No recommended jobs found.");
+    }
+
+
+    return responseHelper(res, 200, "Success", "Recommended jobs fetched successfully.", {
+        data: {
+            recommendedJobs
+        }
+    });
+});
+
+export { resumeParser, completeCandidateProfile, getRecommendedJobs };
