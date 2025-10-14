@@ -20,7 +20,7 @@
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
-    "clean": "rimraf dist",
+    "clean": "node -e \"import('fs').then(fs => fs.rmSync('dist', { recursive: true, force: true }))\"",
     "build": "npm run clean && tsc && copyfiles -u 1 \"src/templates/**/*\" dist/",
     "copy-templates": "copyfiles -u 1 \"src/templates/**/*\" dist/",
     "start": "node dist/server.js",
@@ -41,7 +41,6 @@
     "concurrently": "^9.2.1",
     "copyfiles": "^2.4.1",
     "nodemon": "^3.1.10",
-    "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   },
