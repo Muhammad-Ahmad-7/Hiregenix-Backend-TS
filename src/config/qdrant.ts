@@ -1,0 +1,26 @@
+import { QdrantClient } from '@qdrant/js-client-rest';
+
+// TO connect to Qdrant running locally
+export let client: QdrantClient | null = null;
+
+function connectToQdrant() {
+    try {
+        client = new QdrantClient({ url: 'http://127.0.0.1:6333' });
+        console.log("Connected to Qdrant");
+        return client;
+    } catch (error) {
+        console.error("Failed to connect to Qdrant:", error);
+        throw error;
+    }
+}
+
+function getQdrantClient(): QdrantClient {
+    if (!client) {
+        throw new Error("Qdrant client not initialized. Make sure connectToQdrant() is called first.");
+    }
+    return client;
+}
+
+export {
+    connectToQdrant, getQdrantClient
+}
