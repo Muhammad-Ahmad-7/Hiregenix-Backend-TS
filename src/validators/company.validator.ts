@@ -46,3 +46,45 @@ export const jobCreationSchema = z.object({
     requirements: z.array(z.string().min(2).max(500)),
 
 })
+
+export const jobDeletionSchema = z.object({
+    jobId: z.string().min(2).max(100),
+})
+
+export const getJobByIdSchema = z.object({
+    jobId: z.string().min(2).max(100),
+})
+
+export const updateJobSchema = z.object({
+    title: z.optional(z.string().min(2).max(100)),
+    role: z.optional(z.string().min(2).max(100)),
+    interviewGuideline: z.optional(z.string().min(2).max(500)),
+
+    experienceLevel: z.optional(z.enum(["entry", "mid", "senior"])),
+
+    description: z.optional(z.string().min(2).max(500)),
+
+    requiredSkills: z.optional(z.array(z.string().min(2).max(20))),
+
+
+    workMode: z.optional(z.enum(["full-time", "part-time", "remote"])),
+
+
+    location: z.optional(
+        z.object({
+            city: z.string().min(2).max(100),
+            country: z.string().min(2).max(100),
+        })
+    ),
+
+    salaryRange: z.optional(
+        z.object({
+            min: z.number(),
+            max: z.number(),
+            currency: z.string().min(2).max(10),
+        })
+    ),
+
+    requirements: z.optional(z.array(z.string().min(2).max(500))),
+
+})
