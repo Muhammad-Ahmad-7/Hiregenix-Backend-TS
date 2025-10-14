@@ -4,26 +4,26 @@
     "outDir": "dist",
     "module": "NodeNext",
     "target": "ES2020",
-    "moduleResolution": "nodenext",
-    // 👇 important for default imports
+    "moduleResolution": "NodeNext", // ✅ capitalized for consistency
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "types": [
       "node"
-    ],
+    ], // ✅ ensures Node types load
+    "typeRoots": [
+      "./node_modules/@types"
+    ], // ✅ explicitly tells TS where to find them
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "strict": true,
-    "jsx": "react-jsx",
     "isolatedModules": true,
     "skipLibCheck": true
   },
   "include": [
-    "src/**/*.ts",
-    "src/server.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules"
