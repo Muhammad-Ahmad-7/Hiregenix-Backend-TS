@@ -20,7 +20,7 @@
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
-    "clean": "rimraf dist",
+    "clean": "node -e \"import('fs').then(fs => fs.rmSync('dist', { recursive: true, force: true }))\"",
     "build": "npm run clean && tsc && copyfiles -u 1 \"src/templates/**/*\" dist/",
     "copy-templates": "copyfiles -u 1 \"src/templates/**/*\" dist/",
     "start": "node dist/server.js",
@@ -29,22 +29,26 @@
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.7",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.9",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
     "@types/nodemailer": "^7.0.1",
     "concurrently": "^9.2.1",
     "copyfiles": "^2.4.1",
     "nodemon": "^3.1.10",
-    "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   },
   "dependencies": {
     "@types/node": "^24.7.2",
+    "@qdrant/js-client-rest": "^1.15.1",
+    "amqplib": "^0.10.9",
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.7.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
@@ -52,6 +56,7 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.1",
+    "multer": "^2.0.2",
     "nodemailer": "^7.0.6",
     "zod": "^4.1.8"
   }
