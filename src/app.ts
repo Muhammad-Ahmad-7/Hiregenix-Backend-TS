@@ -23,7 +23,7 @@ app.use("/api/v1/company", companyRouter)
 
 app.use(errorMiddleware)
 app.get("/", (req, res) => {
-    res.send("Hello, World!");
+    res.send("Hello, World! This is Hiregenix Backend.");
 });
 
 export default app;
