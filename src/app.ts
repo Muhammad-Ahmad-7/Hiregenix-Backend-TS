@@ -6,6 +6,7 @@ import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { config } from "./config/config.js";
 import candidateRouter from "./routes/candidate.route.js";
 import companyRouter from "./routes/company.route.js";
+import uploadRouter from "./routes/upload.route.js";
 
 const app = express();
 
@@ -20,6 +21,8 @@ app.use(cookiesParser())
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/candidate", candidateRouter)
 app.use("/api/v1/company", companyRouter)
+app.use("/api/v1/upload", uploadRouter)
+
 
 app.use(errorMiddleware)
 app.get("/", (req, res) => {

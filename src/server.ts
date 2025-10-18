@@ -4,16 +4,17 @@ import { config } from "./config/config.js";
 import connectDB from "./config/db.js";
 import dotenv from "dotenv";
 import { connectToQdrant } from "./config/qdrant.js";
+import connectToRabbitMQ from "./config/rabbitmq.js";
 
 dotenv.config();
 
 const PORT = config.port;
 const server = http.createServer(app);
 
-// connectToRabbitMQ().catch((err) => {
-//     console.error("Failed to connect to RabbitMQ", err);
-//     process.exit(1);
-// });
+connectToRabbitMQ().catch((err) => {
+    console.error("Failed to connect to RabbitMQ", err);
+    process.exit(1);
+});
 
 export const qdrantClient = connectToQdrant();
 
