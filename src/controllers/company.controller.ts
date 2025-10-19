@@ -56,7 +56,6 @@ const completeCompanyProfile = asyncHandler(async (req: Request, res: Response) 
     });
 })
 
-
 const createJob = asyncHandler(async (req: Request, res: Response) => {
     // take out all the job information
     // create a job collection in the mongodb 
@@ -309,5 +308,59 @@ const deleteJob = asyncHandler(async (req: Request, res: Response) => {
 
 });
 
+const getActiveJobs = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user._id;
 
-export { completeCompanyProfile, createJob, deleteJob, getAllJobsWithPagination, getJobById, updateJobById }
+    if (!userId) {
+        return responseHelper(res, 400, "Failed", "User not found.");
+    }
+
+    const findCompany = await CompanyModel.findOne({ userId });
+
+    if (!findCompany) {
+        return responseHelper(res, 404, "Failed", "Company not found.");
+    }
+
+    const companyId = findCompany._id;
+
+    const findActiveJobs = await JobModel.find({ status: "open", companyId, isDeleted: false }).sort({ createdAt: -1 }).limit(6);
+
+    if (!findActiveJobs || findActiveJobs.length === 0) {
+        return responseHelper(res, 404, "Failed", "No active jobs found.");
+    }
+    return responseHelper(res, 200, "Success", "Active jobs fetched successfully.", {
+        data: {
+            findActiveJobs
+        }
+    });
+});
+
+const getDashboardStats = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user._id;
+    if (!userId) {
+        return responseHelper(res, 400, "Failed", "User not found.");
+    }
+
+    const findCompany = await CompanyModel.findOne({ userId });
+
+    if (!findCompany) {
+        return responseHelper(res, 404, "Failed", "Company not found.");
+    }
+
+    const companyId = findCompany._id;
+
+    const postedJobsCount = await JobModel.countDocuments({ companyId, isDeleted: false });
+    const activeJobsCount = await JobModel.countDocuments({ companyId, status: "open", isDeleted: false });
+
+    return responseHelper(res, 200, "Success", "Company stats fetched successfully.", {
+        data: {
+            postedJobsCount,
+            activeJobsCount
+        }
+    });
+
+});
+
+
+
+export { completeCompanyProfile, createJob, deleteJob, getAllJobsWithPagination, getJobById, updateJobById, getActiveJobs, getDashboardStats }

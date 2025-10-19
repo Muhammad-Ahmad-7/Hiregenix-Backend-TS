@@ -9,6 +9,7 @@ import fs from "fs";
 import { TaskModel } from "../models/task.model.js";
 import CandidateModel from "../models/candidate.model.js";
 import { RecommendedJobModel } from "../models/recommended_jobs.model.js";
+import { JobModel } from "../models/job.model.js";
 
 
 const completeCandidateProfile = asyncHandler(async (req: Request, res: Response) => {
@@ -265,5 +266,8 @@ const resumeParser = asyncHandler(async (req: Request, res: Response) => {
     });
 });
 
+const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
+    // Implementation for scheduling interview
+});
 
-export { resumeParser, completeCandidateProfile, getRecommendedJobs, updateCandidateProfile, getCandidateProfile, getCandidateById };
+export { resumeParser, completeCandidateProfile, getRecommendedJobs, updateCandidateProfile, getCandidateProfile, getCandidateById, scheduleInterview };

@@ -1,5 +1,5 @@
 import express from "express";
-import { completeCompanyProfile, createJob, deleteJob, getAllJobsWithPagination, getJobById, updateJobById } from "../controllers/company.controller.js";
+import { completeCompanyProfile, createJob, deleteJob, getActiveJobs, getAllJobsWithPagination, getDashboardStats, getJobById, updateJobById } from "../controllers/company.controller.js";
 import isLoggedIn from "../middlewares/auth.middleware.js";
 import { isCompany } from "../middlewares/company.middleware.js";
 import { validateRequest } from "../middlewares/validate.middleware.js";
@@ -14,5 +14,8 @@ companyRouter.get("/get-all-jobs", isLoggedIn, isCompany, getAllJobsWithPaginati
 companyRouter.get("/get-job-by-id", isLoggedIn, isCompany, validateRequest(getJobByIdSchema), getJobById);
 companyRouter.patch("/update-job-by-id/:jobId", isLoggedIn, isCompany, validateRequest(updateJobSchema), updateJobById);
 companyRouter.delete("/delete-job", isLoggedIn, isCompany, validateRequest(jobDeletionSchema), deleteJob);
+companyRouter.get("/get-active-jobs", isLoggedIn, isCompany, getActiveJobs);
+companyRouter.get("/get-dashboard-stats", isLoggedIn, isCompany, getDashboardStats);
+
 
 export default companyRouter;
