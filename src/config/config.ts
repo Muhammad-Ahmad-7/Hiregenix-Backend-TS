@@ -36,7 +36,11 @@ interface Config {
         cloudName: string | undefined;
         apiKey: string | undefined;
         apiSecret: string | undefined;
-    }
+    };
+    qdrant: {
+        url: string;
+        apiKey: string;
+    };
 }
 
 export const config: Config = {
@@ -66,5 +70,9 @@ export const config: Config = {
         cloudName: process.env.CLOUDINARY_CLOUD_NAME,
         apiKey: process.env.CLOUDINARY_API_KEY,
         apiSecret: process.env.CLOUDINARY_API_SECRET,
-    }
+    },
+    qdrant: {
+        url: process.env.QDRANT_URL || 'https://localhost:6333',
+        apiKey: process.env.QDRANT_API_KEY || '',
+    },
 };

@@ -9,6 +9,7 @@ export interface IJob extends Document {
     description: string;
     requiredSkills: string[];
     workMode: "full-time" | "part-time" | "remote";
+    deadline: Date;
     aiSummary?: string;
     embeddingSynced?: boolean;
     qdrantId?: string;
@@ -66,6 +67,10 @@ const JobSchema = new Schema<IJob>({
     workMode: {
         type: String,
         enum: ["full-time", "part-time", "remote"],
+        required: true
+    },
+    deadline: {
+        type: Date,
         required: true
     },
     location: {

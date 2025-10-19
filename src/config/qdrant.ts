@@ -1,11 +1,15 @@
 import { QdrantClient } from '@qdrant/js-client-rest';
+import { config } from './config.js';
 
 // TO connect to Qdrant running locally
 export let client: QdrantClient | null = null;
 
 function connectToQdrant() {
     try {
-        client = new QdrantClient({ url: 'http://127.0.0.1:6333' });
+        client = new QdrantClient({
+            url: config.qdrant.url,
+            apiKey: config.qdrant.apiKey,
+        });
         console.log("Connected to Qdrant");
         return client;
     } catch (error) {

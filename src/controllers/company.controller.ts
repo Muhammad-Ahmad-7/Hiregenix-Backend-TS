@@ -72,7 +72,8 @@ const createJob = asyncHandler(async (req: Request, res: Response) => {
         location,
         salaryRange,
         requirements,
-        status
+        status,
+        deadline
     } = req.body;
 
     const existingCompany = await CompanyModel.findOne({ userId: req.user._id });
@@ -95,7 +96,8 @@ const createJob = asyncHandler(async (req: Request, res: Response) => {
         salaryRange,
         requirements,
         status,
-        companyId
+        companyId,
+        deadline
     })
 
     if (!newJob) {
