@@ -184,43 +184,6 @@ const getCandidateById = asyncHandler(async (req: Request, res: Response) => {
     });
 });
 
-
-const getRecommendedJobs = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user._id;
-
-    if (!userId) {
-        return responseHelper(res, 400, "Failed", "User not found.");
-    }
-
-    const candidate = await CandidateModel.findOne({ userId });
-
-    if (!candidate) {
-        return responseHelper(res, 400, "Failed", "Candidate not found.");
-    }
-
-    console.log("found candidate", candidate)
-
-    const candidateId = candidate._id.toString();
-
-    console.log("candidateId", candidateId)
-
-
-    const recommendedJobs = await RecommendedJobModel.findOne({ candidateId: candidateId });
-
-    console.log("recommendedJobs", recommendedJobs)
-
-    if (!recommendedJobs) {
-        return responseHelper(res, 400, "Failed", "No recommended jobs found.");
-    }
-
-
-    return responseHelper(res, 200, "Success", "Recommended jobs fetched successfully.", {
-        data: {
-            recommendedJobs
-        }
-    });
-});
-
 const resumeParser = asyncHandler(async (req: Request, res: Response) => {
     console.log("Received resume parse request:", req.body);
     const file = req.file;
@@ -270,4 +233,4 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
     // Implementation for scheduling interview
 });
 
-export { resumeParser, completeCandidateProfile, getRecommendedJobs, updateCandidateProfile, getCandidateProfile, getCandidateById, scheduleInterview };
+export { resumeParser, completeCandidateProfile, updateCandidateProfile, getCandidateProfile, getCandidateById, scheduleInterview };
