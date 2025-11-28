@@ -1,5 +1,5 @@
 import express from "express";
-import { completeCandidateProfile, getCandidateProfile, getRecommendedJobs, resumeParser, updateCandidateProfile } from "../controllers/candidate.controller.js";
+import { completeCandidateProfile, getCandidateProfile, resumeParser, updateCandidateProfile } from "../controllers/candidate.controller.js";
 import upload from "../middlewares/multer.middleware.js";
 import isLoggedIn from "../middlewares/auth.middleware.js";
 import { isResumeAlreadyUploaded } from "../middlewares/candidate.middleware.js";
@@ -14,7 +14,6 @@ candidateRouter.post("/complete-profile", isLoggedIn, validateRequest(candidateP
 candidateRouter.get("/profile", isLoggedIn, getCandidateProfile);
 candidateRouter.patch("/update-profile/:candidateId", isLoggedIn, validateRequest(candidateUpdateProfileSchema), updateCandidateProfile);
 candidateRouter.post("/resume", isLoggedIn, isResumeAlreadyUploaded, upload.single("file"), resumeParser);
-candidateRouter.get("/recommended-jobs", isLoggedIn, getRecommendedJobs)
 
 export default candidateRouter;
 
