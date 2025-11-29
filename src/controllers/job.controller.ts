@@ -10,6 +10,7 @@ import { JOB_DESCRIPTION_EMBEDDINGS_QUEUE } from "../utils/constant.js";
 import { qdrantClient } from "../server.js";
 import { RecommendedJobModel } from "../models/recommended_jobs.model.js";
 import CandidateModel from "../models/candidate.model.js";
+import { InterviewModel } from "../models/interview.model.js";
 
 
 const createJob = asyncHandler(async (req: Request, res: Response) => {
@@ -328,6 +329,46 @@ const getRecommendedJobs = asyncHandler(async (req: Request, res: Response) => {
     });
 });
 
+const getAllAppliedJobsOfCandidate = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.userId;
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const jobs = await InterviewModel.find({ candidateId: userId }).populate("jobId", "title workMode deadline").populate("companyId", "companyName logoUrl").skip(skip).limit(limit).sort({ createdAt: -1 });
 
 
-export { createJob, deleteJob, getAllJobsWithPagination, getRecommendedJobs, getJobById, updateJobById, getActiveJobs }
+    if (!jobs) {
+        return responseHelper(res, 500, "Failed", "Failed to fetch applied jobs.");
+    }
+
+    return responseHelper(res, 200, "Success", "Applied jobs fetched successfully.", {
+        data: {
+            jobs,
+        },
+    });
+})
+
+const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const jobs = await JobModel.find({}).populate("companyId", "companyName").skip(skip).limit(limit).sort({ createdAt: -1 });
+
+    if (!jobs) {
+        return responseHelper(res, 500, "Failed", "Failed to fetch applied jobs.");
+    }
+
+    return responseHelper(res, 200, "Success", "Applied jobs fetched successfully.", {
+        data: {
+            jobs,
+        },
+    });
+})
+
+
+
+export { createJob, deleteJob, getAllJobsWithPagination, getRecommendedJobs, getJobById, updateJobById, getActiveJobs, getAllAppliedJobsOfCandidate, getAllJobs }

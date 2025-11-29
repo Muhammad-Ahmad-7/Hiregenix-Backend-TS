@@ -8,6 +8,7 @@ import candidateRouter from "./routes/candidate.route.js";
 import companyRouter from "./routes/company.route.js";
 import uploadRouter from "./routes/upload.route.js";
 import jobRouter from "./routes/job.route.js";
+import interviewRouter from "./routes/interview.route.js";
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use("/api/v1/candidate", candidateRouter)
 app.use("/api/v1/company", companyRouter)
 app.use("/api/v1/upload", uploadRouter)
 app.use("/api/v1/job", jobRouter);
+app.use("/api/v1/interview", interviewRouter);
 
 app.use(errorMiddleware)
 app.get("/", (req, res) => {
