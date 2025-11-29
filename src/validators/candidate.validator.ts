@@ -32,3 +32,8 @@ export const candidateUpdateProfileSchema = z.object({
     bio: z.optional(z.string().min(2).max(500)),
     tagline: z.optional(z.string().min(2).max(100)),
 });
+
+
+export const scheduleInterviewSchema = z.object({
+    scheduledDate: z.coerce.date(),  // ISO date string
+});

@@ -7,7 +7,7 @@ export interface IInterview extends Document {
     jobId: Types.ObjectId;
     type: "live" | "mock" | "video";
 
-    scheduledAt?: Date;
+    scheduledDate?: Date;
     durationMins?: number;
 
     status:
@@ -61,7 +61,7 @@ const InterviewSchema = new Schema<IInterview>(
             enum: ["live", "mock", "video"],
             default: "live",
         },
-        scheduledAt: Date,
+        scheduledDate: Date,
         durationMins: Number,
         status: {
             type: String,
