@@ -82,6 +82,74 @@ const getDashboardStats = asyncHandler(async (req: Request, res: Response) => {
 
 });
 
+const getCompanyProfile = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.userId;
+
+    const company = await CompanyModel.findById({ _id: userId }).populate("userId", "email role");
+    if (!company) {
+        return responseHelper(res, 404, "Failed", "Company not found.");
+    }
+
+    return responseHelper(res, 200, "Success", "Company profile fetched successfully.", {
+        data: {
+            company
+        }
+    });
+});
+
+const updatedCompanyProfile = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.userId;
+
+    const existingCompany = await CompanyModel.findById({ _id: userId });
+
+    if (!existingCompany) {
+        return responseHelper(res, 400, "Failed", "Company profile does not exist.");
+    }
+
+    const {
+        companyName,
+        city,
+        contactEmail,
+        country,
+        description,
+        foundedYear,
+        linkedInUrl,
+        logoUrl,
+        ntnNumber,
+        techStack,
+        website
+    } = req.body;
+
+    const updatedCompany = await CompanyModel.findByIdAndUpdate(
+        existingCompany._id,
+        {
+            companyName: companyName || existingCompany.companyName,
+            city: city || existingCompany.city,
+            contactEmail: contactEmail || existingCompany.contactEmail,
+            country: country || existingCompany.country,
+            description: description || existingCompany.description,
+            foundedYear: foundedYear || existingCompany.foundedYear,
+            linkedInUrl: linkedInUrl || existingCompany.linkedInUrl,
+            logoUrl: logoUrl || existingCompany.logoUrl,
+            ntnNumber: ntnNumber || existingCompany.ntnNumber,
+            techStack: techStack || existingCompany.techStack,
+            website: website || existingCompany.website,
+        },
+        { new: true }
+    );
 
 
-export { completeCompanyProfile, getDashboardStats }
+    if (!updatedCompany) {
+        return responseHelper(res, 500, "Failed", "Failed to update company profile. Please try again later.");
+    }
+
+    const company = await CompanyModel.findById(updatedCompany._id).populate("userId", "email role");
+
+    return responseHelper(res, 200, "Success", "Company profile updated successfully.", {
+        data: {
+            company
+        }
+    });
+});
+
+export { completeCompanyProfile, getDashboardStats, getCompanyProfile, updatedCompanyProfile }
