@@ -3,6 +3,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { SALT_ROUND } from "../utils/constant.js";
 import { config } from "../config/config.js";
+import CandidateModel from "./candidate.model.js";
+import CompanyModel from "./company.model.js";
 
 export interface IUser extends Document {
     email: string;
@@ -90,15 +92,27 @@ interface JwtPayload {
     email: string;
     username: string;
     role: "admin" | "candidate" | "company";
+    userId: string;
 }
 
 // 🔑 Generate Access Token
-UserSchema.methods.generateAccessToken = function (this: IUser): string {
+UserSchema.methods.generateAccessToken = async function (this: IUser): Promise<string> {
+    let userId = null;
+
+    if (this.role === "candidate") {
+        const candidate = await CandidateModel.findOne({ userId: this._id });
+        userId = candidate?._id;
+    } else if (this.role === "company") {
+        const company = await CompanyModel.findOne({ userId: this._id });
+        userId = company?._id;
+    }
+
     const payload: JwtPayload = {
         _id: this._id as string,
         email: this.email,
         username: this.username,
         role: this.role,
+        userId: userId ? userId.toString() : "",
     };
 
     return jwt.sign(payload, config.jwt.accessTokenSecret, {
@@ -107,12 +121,12 @@ UserSchema.methods.generateAccessToken = function (this: IUser): string {
 };
 
 // 🔑 Generate Refresh Token
-UserSchema.methods.generateRefreshToken = function (this: IUser): string {
-    const payload = { _id: this._id as string };
+// UserSchema.methods.generateRefreshToken = function (this: IUser): string {
+//     const payload = { _id: this._id as string };
 
-    return jwt.sign(payload, config.jwt.refreshTokenSecret, {
-        expiresIn: config.jwt.refreshTokenExpiresIn,
-    } as jwt.SignOptions);
-};
+//     return jwt.sign(payload, config.jwt.refreshTokenSecret, {
+//         expiresIn: config.jwt.refreshTokenExpiresIn,
+//     } as jwt.SignOptions);
+// };
 
 export const User = mongoose.model<IUser>("User", UserSchema);

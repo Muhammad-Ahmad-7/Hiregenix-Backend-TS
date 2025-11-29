@@ -96,7 +96,7 @@ const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
     }
 
     // Admin Profile creation can be handled here if needed
-    const accessToken = user.generateAccessToken()
+    const accessToken = await user.generateAccessToken()
     return responseHelper(res, 200, "Success", "Email verified successfully. Your account is now active.", {
         data: {
             accessToken
@@ -117,7 +117,7 @@ const login = asyncHandler(async (req: Request, res: Response) => {
         return responseHelper(res, 401, "Failed", "Email not verified. Please verify your email before logging in.")
     }
 
-    const accessToken = user.generateAccessToken()
+    const accessToken = await user.generateAccessToken()
     return responseHelper(res, 200, "Success", "Login successful.", {
         data: {
             accessToken,

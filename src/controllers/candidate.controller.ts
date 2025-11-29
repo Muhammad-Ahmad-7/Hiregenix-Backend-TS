@@ -79,7 +79,6 @@ const completeCandidateProfile = asyncHandler(async (req: Request, res: Response
     }
 
     try {
-        // Use the safe getChannel function
         sendToQueue(CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, (task._id as string).toString());
         console.log("Message sent to RabbitMQ queue successfully");
     } catch (error) {
