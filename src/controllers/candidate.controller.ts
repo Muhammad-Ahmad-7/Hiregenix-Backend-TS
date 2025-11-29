@@ -10,6 +10,7 @@ import { TaskModel } from "../models/task.model.js";
 import CandidateModel from "../models/candidate.model.js";
 import { RecommendedJobModel } from "../models/recommended_jobs.model.js";
 import { JobModel } from "../models/job.model.js";
+import ResumeModel from "../models/resume.model.js";
 
 
 const completeCandidateProfile = asyncHandler(async (req: Request, res: Response) => {
@@ -203,9 +204,13 @@ const resumeParser = asyncHandler(async (req: Request, res: Response) => {
 
     const resumeUrl = result.secure_url;
 
-    const task = await TaskModel.create({
+    const candidate = await CandidateModel.findOne({ userId: req.user._id });
+    if (!candidate) {
+        return responseHelper(res, 404, "Failed", "Candidate not found.");
+    }
 
-        userId: req.user._id,
+    const task = await TaskModel.create({
+        userId: candidate._id,
         type: "resume_parsing",
         payload: { resume: resumeUrl },
         status: "pending",
@@ -229,8 +234,28 @@ const resumeParser = asyncHandler(async (req: Request, res: Response) => {
     });
 });
 
+const getResumeParsedData = asyncHandler(async (req: Request, res: Response) => {
+
+    const candidate = await CandidateModel.findOne({ userId: req.user._id });
+
+    if (!candidate) {
+        return responseHelper(res, 404, "Failed", "Candidate not found.");
+    }
+
+    const resume = await ResumeModel.findOne({ candidateId: candidate._id });
+
+    if (!resume) {
+        return responseHelper(res, 404, "Failed", "Resume not found.");
+    }
+
+    return responseHelper(res, 200, "Success", "Parsed resume data fetched successfully.", {
+        data: {
+            resume
+        }
+    });
+});
 const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
     // Implementation for scheduling interview
 });
 
-export { resumeParser, completeCandidateProfile, updateCandidateProfile, getCandidateProfile, getCandidateById, scheduleInterview };
+export { resumeParser, completeCandidateProfile, updateCandidateProfile, getCandidateProfile, getCandidateById, scheduleInterview, getResumeParsedData };

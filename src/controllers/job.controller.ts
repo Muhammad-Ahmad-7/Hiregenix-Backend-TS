@@ -12,8 +12,6 @@ import { RecommendedJobModel } from "../models/recommended_jobs.model.js";
 import CandidateModel from "../models/candidate.model.js";
 
 
-
-
 const createJob = asyncHandler(async (req: Request, res: Response) => {
     // take out all the job information
     // create a job collection in the mongodb 

@@ -52,7 +52,7 @@ const signup = asyncHandler(async (req: Request, res: Response) => {
                 emailVerificationFailed: true
             }
         })
-        return responseHelper(res, 201, "success", "Account created but verification email could not be sent. Please contact support.")
+        return responseHelper(res, 201, "Success", "Account created but verification email could not be sent. Please contact support.")
     }
 })
 
