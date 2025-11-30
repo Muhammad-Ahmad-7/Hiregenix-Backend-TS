@@ -362,10 +362,17 @@ const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
         return responseHelper(res, 500, "Failed", "Failed to fetch applied jobs.");
     }
 
+    const totalJobs = await JobModel.countDocuments({});
+
     return responseHelper(res, 200, "Success", "Applied jobs fetched successfully.", {
         data: {
             jobs,
         },
+    }, {
+        total: totalJobs,
+        page: page,
+        limit: limit,
+        totalPages: Math.ceil(totalJobs / limit),
     });
 })
 

@@ -55,4 +55,52 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
 });
 
 
-export { scheduleInterview }
+const getTodayCandidateInterviews = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.userId;
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const interviews = await InterviewModel.find({ candidateId: userId, scheduledDate: { $gte: start, $lte: end } }).populate("jobId", "title workMode deadline").populate("companyId", "companyName").sort({ scheduledDate: -1 })
+    if (!interviews) {
+        return responseHelper(res, 500, "Failed", "Failed to fetch interviews.");
+    }
+
+    return responseHelper(res, 200, "Success", "Interviews fetched successfully.", {
+        data: {
+            interviews
+        }
+    });
+});
+
+const getAllCandidateInterviews = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.userId;
+
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const interviews = await InterviewModel.find({ candidateId: userId }).populate("jobId", "title workMode deadline").populate("companyId", "companyName").sort({ scheduledDate: -1 }).skip(skip).limit(limit);
+    if (!interviews) {
+        return responseHelper(res, 500, "Failed", "Failed to fetch interviews.");
+    }
+
+    const totalInterviews = await InterviewModel.countDocuments({ candidateId: userId });
+
+    return responseHelper(res, 200, "Success", "Interviews fetched successfully.", {
+        data: {
+            interviews
+        },
+    }, {
+        total: totalInterviews,
+        page: page,
+        limit: limit,
+        totalPages: Math.ceil(totalInterviews / limit),
+    });
+});
+
+export { scheduleInterview, getTodayCandidateInterviews, getAllCandidateInterviews }
