@@ -11,7 +11,7 @@ const candidateRouter = express.Router();
 
 
 candidateRouter.post("/complete-profile", isLoggedIn, validateRequest(candidateProfileCreationSchema), completeCandidateProfile);
-candidateRouter.get("/profile", isLoggedIn, getCandidateProfile);
+candidateRouter.get("/profile/:userId", isLoggedIn, getCandidateProfile);
 candidateRouter.patch("/update-profile/:candidateId", isLoggedIn, validateRequest(candidateUpdateProfileSchema), updateCandidateProfile);
 candidateRouter.post("/resume", isLoggedIn, isResumeAlreadyUploaded, upload.single("file"), resumeParser);
 candidateRouter.get("/get-resume-parsed-data", isLoggedIn, getResumeParsedData);

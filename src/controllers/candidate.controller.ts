@@ -154,7 +154,11 @@ const updateCandidateProfile = asyncHandler(async (req: Request, res: Response) 
 
 
 const getCandidateProfile = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user._id;
+    const { userId } = req.params;
+
+    if (!userId) {
+        return responseHelper(res, 400, "Failed", "User ID is required.");
+    }
 
     const candidate = await CandidateModel.findOne({ userId }).populate("userId", "email role");
     if (!candidate) {
@@ -170,14 +174,16 @@ const getCandidateProfile = asyncHandler(async (req: Request, res: Response) => 
 
 
 const getCandidateById = asyncHandler(async (req: Request, res: Response) => {
-    const { candidateId } = req.params;
+    const { userId } = req.params;
 
-    const candidate = await CandidateModel.findById(candidateId);
+    if (!userId) {
+        return responseHelper(res, 400, "Failed", "User ID is required.");
+    }
 
+    const candidate = await CandidateModel.findOne({ userId }).populate("userId", "email role");
     if (!candidate) {
         return responseHelper(res, 404, "Failed", "Candidate not found.");
     }
-
     return responseHelper(res, 200, "Success", "Candidate fetched successfully.", {
         data: {
             candidate

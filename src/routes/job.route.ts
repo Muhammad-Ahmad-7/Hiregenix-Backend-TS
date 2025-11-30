@@ -3,7 +3,7 @@ import isLoggedIn from "../middlewares/auth.middleware.js";
 import { isCompany } from "../middlewares/company.middleware.js";
 import { validateRequest } from "../middlewares/validate.middleware.js";
 import { companyProfileCreationSchema, getJobByIdSchema, jobCreationSchema, jobDeletionSchema, updateJobSchema } from "../validators/company.validator.js";
-import { createJob, deleteJob, getActiveJobs, getAllAppliedJobsOfCandidate, getAllJobs, getAllJobsWithPagination, getJobById, getRecommendedJobs, updateJobById } from "../controllers/job.controller.js";
+import { createJob, deleteJob, getCompanyOpenJobs, getAllAppliedJobsOfCandidate, getAllJobs, getAllJobsWithPagination, getJobById, getRecommendedJobs, updateJobById, getCompanyClosedJobs, getInterviewApplicationsForJob } from "../controllers/job.controller.js";
 
 const jobRouter = express.Router()
 
@@ -12,9 +12,11 @@ jobRouter.get("/get-all-jobs", isLoggedIn, isCompany, getAllJobsWithPagination);
 jobRouter.get("/get-job-by-id", isLoggedIn, isCompany, validateRequest(getJobByIdSchema), getJobById);
 jobRouter.patch("/update-job-by-id/:jobId", isLoggedIn, isCompany, validateRequest(updateJobSchema), updateJobById);
 jobRouter.delete("/delete-job", isLoggedIn, isCompany, validateRequest(jobDeletionSchema), deleteJob);
-jobRouter.get("/get-active-jobs", isLoggedIn, isCompany, getActiveJobs);
+jobRouter.get("/get-company-jobs/open", isLoggedIn, isCompany, getCompanyOpenJobs);
+jobRouter.get("/get-company-jobs/closed", isLoggedIn, isCompany, getCompanyClosedJobs);
 jobRouter.get("/recommended-jobs", isLoggedIn, getRecommendedJobs);
 jobRouter.get("/all-applied-jobs", isLoggedIn, getAllAppliedJobsOfCandidate);
 jobRouter.get("/all", isLoggedIn, getAllJobs);
+jobRouter.get("/interview-applications/:jobId", isLoggedIn, isCompany, getInterviewApplicationsForJob);
 
 export default jobRouter;

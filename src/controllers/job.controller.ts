@@ -265,32 +265,83 @@ const deleteJob = asyncHandler(async (req: Request, res: Response) => {
 
 });
 
-const getActiveJobs = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user._id;
+const getCompanyOpenJobs = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.userId;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
 
     if (!userId) {
         return responseHelper(res, 400, "Failed", "User not found.");
     }
 
-    const findCompany = await CompanyModel.findOne({ userId });
+    const findCompany = await CompanyModel.findById(userId);
 
     if (!findCompany) {
+        console.log("find company")
         return responseHelper(res, 404, "Failed", "Company not found.");
     }
 
     const companyId = findCompany._id;
 
-    const findActiveJobs = await JobModel.find({ status: "open", companyId, isDeleted: false }).sort({ createdAt: -1 }).limit(6);
+    const findActiveJobs = await JobModel.find({ status: "open", companyId, isDeleted: false }).sort({ createdAt: -1 }).limit(limit).skip(skip);
 
     if (!findActiveJobs || findActiveJobs.length === 0) {
         return responseHelper(res, 404, "Failed", "No active jobs found.");
     }
+
+    const totalActiveJobs = await JobModel.countDocuments({ status: "open", companyId, isDeleted: false });
     return responseHelper(res, 200, "Success", "Active jobs fetched successfully.", {
         data: {
             findActiveJobs
         }
+    }, {
+        total: totalActiveJobs,
+        page: page,
+        limit: limit,
+        totalPages: Math.ceil(totalActiveJobs / limit),
     });
 });
+
+
+const getCompanyClosedJobs = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.userId;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    if (!userId) {
+        return responseHelper(res, 400, "Failed", "User not found.");
+    }
+
+    const findCompany = await CompanyModel.findById(userId);
+
+    if (!findCompany) {
+        console.log("find company")
+        return responseHelper(res, 404, "Failed", "Company not found.");
+    }
+
+    const companyId = findCompany._id;
+
+    const findClosedJobs = await JobModel.find({ status: "closed", companyId, isDeleted: false }).sort({ createdAt: -1 }).limit(limit).skip(skip);
+
+    if (!findClosedJobs || findClosedJobs.length === 0) {
+        return responseHelper(res, 404, "Failed", "No closed jobs found.");
+    }
+
+    const totalClosedJobs = await JobModel.countDocuments({ status: "closed", companyId, isDeleted: false });
+    return responseHelper(res, 200, "Success", "Closed jobs fetched successfully.", {
+        data: {
+            findClosedJobs
+        }
+    }, {
+        total: totalClosedJobs,
+        page: page,
+        limit: limit,
+        totalPages: Math.ceil(totalClosedJobs / limit),
+    });
+});
+
 
 
 const getRecommendedJobs = asyncHandler(async (req: Request, res: Response) => {
@@ -376,6 +427,34 @@ const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
     });
 })
 
+const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Response) => {
+    console.log("get interview application for jobs")
+    const { jobId } = req.params;
+    const userId = req.userId;
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const interviews = await InterviewModel.find({ jobId, companyId: userId }).populate("candidateId", "fullName countryName profilePictureUrl").sort({ scheduledDate: -1 }).skip(skip).limit(limit);
+    if (!interviews) {
+        return responseHelper(res, 500, "Failed", "Failed to fetch interview applications.");
+    }
+
+    const totalInterviews = await InterviewModel.countDocuments({ jobId, companyId: userId });
+
+    return responseHelper(res, 200, "Success", "Interview applications fetched successfully.", {
+        data: {
+            interviews
+        }
+    }, {
+        total: totalInterviews,
+        page: page,
+        limit: limit,
+        totalPages: Math.ceil(totalInterviews / limit),
+    });
+
+});
 
 
-export { createJob, deleteJob, getAllJobsWithPagination, getRecommendedJobs, getJobById, updateJobById, getActiveJobs, getAllAppliedJobsOfCandidate, getAllJobs }
+export { createJob, deleteJob, getAllJobsWithPagination, getRecommendedJobs, getJobById, updateJobById, getCompanyOpenJobs, getCompanyClosedJobs, getAllAppliedJobsOfCandidate, getAllJobs, getInterviewApplicationsForJob }

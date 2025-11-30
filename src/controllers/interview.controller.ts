@@ -103,4 +103,5 @@ const getAllCandidateInterviews = asyncHandler(async (req: Request, res: Respons
     });
 });
 
+
 export { scheduleInterview, getTodayCandidateInterviews, getAllCandidateInterviews }
