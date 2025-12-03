@@ -11,6 +11,7 @@ import { qdrantClient } from "../server.js";
 import { RecommendedJobModel } from "../models/recommended_jobs.model.js";
 import CandidateModel from "../models/candidate.model.js";
 import { InterviewModel } from "../models/interview.model.js";
+import { SavedJobModel } from "../models/save_job.model.js";
 
 
 const createJob = asyncHandler(async (req: Request, res: Response) => {
@@ -458,5 +459,65 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
 
 });
 
+const saveJobById = asyncHandler(async (req: Request, res: Response) => {
+    const { jobId } = req.params;
 
-export { createJob, deleteJob, getAllJobsWithPagination, getRecommendedJobs, getJobById, updateJobById, getCompanyOpenJobs, getCompanyClosedJobs, getAllAppliedJobsOfCandidate, getAllJobs, getInterviewApplicationsForJob }
+    const userId = req.userId;
+
+    if (!jobId) {
+        return responseHelper(res, 400, "Failed", "Job Id is required.");
+    }
+
+    const job = await JobModel.findById({ _id: jobId });
+
+    if (!job) {
+        return responseHelper(res, 404, "Failed", "Job not found with this id.");
+    }
+
+    const savedJob = await SavedJobModel.create({
+        jobId: job._id,
+        candidateId: userId
+    })
+
+    if (!savedJob) {
+        return responseHelper(res, 500, "Failed", "Failed to save job.");
+    }
+
+    return responseHelper(res, 200, "Success", "Job Saved Successfully.", {
+        data: {
+            savedJob
+        }
+    });
+
+
+});
+
+const getSavedJobsOfCandidate = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.userId;
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    const savedJobs = await SavedJobModel.find({ candidateId: userId }).populate("jobId").skip(skip).limit(limit).sort({ createdAt: -1 });
+
+    if (!savedJobs) {
+        return responseHelper(res, 400, "Failed", "Failed to get candidate saved jobs.");
+    }
+
+    const totalSavedJobs = await SavedJobModel.countDocuments({ candidateId: userId });
+
+    return responseHelper(res, 200, "Success", "Successfully fetched all saved jobs.", {
+        data: {
+            savedJobs
+        }
+    }, {
+        total: totalSavedJobs,
+        page: page,
+        limit: limit,
+        totalPages: Math.ceil(totalSavedJobs / limit),
+    });
+});
+
+
+export { createJob, deleteJob, getAllJobsWithPagination, getRecommendedJobs, getJobById, updateJobById, getCompanyOpenJobs, getCompanyClosedJobs, getAllAppliedJobsOfCandidate, getAllJobs, getInterviewApplicationsForJob, saveJobById, getSavedJobsOfCandidate }
