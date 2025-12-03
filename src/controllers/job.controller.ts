@@ -245,19 +245,21 @@ const deleteJob = asyncHandler(async (req: Request, res: Response) => {
         return responseHelper(res, 500, "Failed", "Failed to delete job.");
     }
 
+    let result = null;
 
+    if (updateJob.qdrantId !== null) {
+        result = await qdrantClient.delete(
+            "job",
+            {
+                points: [
+                    updateJob?.qdrantId as string
+                ],
+            },
+        )
 
-    const result = await qdrantClient.delete(
-        "job",
-        {
-            points: [
-                updateJob?.qdrantId as string
-            ],
-            wait: true,
-        },
-    )
+    }
 
-    if (result.status !== "completed") {
+    if (result && result.status !== "completed") {
         console.log("Job deleted from mongodb but not from qdrant db.")
     }
 

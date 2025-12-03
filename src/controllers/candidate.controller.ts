@@ -154,6 +154,25 @@ const updateCandidateProfile = asyncHandler(async (req: Request, res: Response) 
 
 
 const getCandidateProfile = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.userId;
+
+    if (!userId) {
+        return responseHelper(res, 400, "Failed", "User ID is required.");
+    }
+
+    const candidate = await CandidateModel.findById({ _id: userId }).populate("userId", "email role");
+    if (!candidate) {
+        return responseHelper(res, 404, "Failed", "Candidate not found.");
+    }
+
+    return responseHelper(res, 200, "Success", "Candidate profile fetched successfully.", {
+        data: {
+            candidate
+        }
+    });
+});
+
+const getCandidateProfileById = asyncHandler(async (req: Request, res: Response) => {
     const { userId } = req.params;
 
     if (!userId) {
@@ -264,4 +283,4 @@ const getResumeParsedData = asyncHandler(async (req: Request, res: Response) => 
 
 
 
-export { resumeParser, completeCandidateProfile, updateCandidateProfile, getCandidateProfile, getCandidateById, getResumeParsedData };
+export { resumeParser, completeCandidateProfile, updateCandidateProfile, getCandidateProfile, getCandidateById, getResumeParsedData, getCandidateProfileById };

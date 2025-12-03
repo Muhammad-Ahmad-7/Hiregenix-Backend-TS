@@ -8,7 +8,7 @@ import { createJob, deleteJob, getCompanyOpenJobs, getAllAppliedJobsOfCandidate,
 const jobRouter = express.Router()
 
 jobRouter.post("/create-job", isLoggedIn, isCompany, validateRequest(jobCreationSchema), createJob);
-jobRouter.get("/get-all-jobs", isLoggedIn, isCompany, getAllJobsWithPagination);
+jobRouter.get("/get-all-jobs", isLoggedIn, getAllJobsWithPagination);
 jobRouter.get("/get-job-by-id", isLoggedIn, isCompany, validateRequest(getJobByIdSchema), getJobById);
 jobRouter.patch("/update-job-by-id/:jobId", isLoggedIn, isCompany, validateRequest(updateJobSchema), updateJobById);
 jobRouter.delete("/delete-job", isLoggedIn, isCompany, validateRequest(jobDeletionSchema), deleteJob);
