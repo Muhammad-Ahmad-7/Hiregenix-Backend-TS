@@ -38,6 +38,7 @@ const completeCompanyProfile = asyncHandler(async (req: Request, res: Response) 
             ntnNumber,
             techStack,
             website,
+            isProfileCompleted: true,
         },
         { new: true }
     );

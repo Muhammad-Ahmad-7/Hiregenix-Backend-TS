@@ -17,6 +17,7 @@ export interface ICompany extends Document {
     hiringStatus: "actively_hiring" | "paused" | "not_hiring";
     ntnNumber: string;
     isDeleted?: string;
+    isProfileCompleted: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -83,6 +84,10 @@ const CompanySchema = new Schema<ICompany>({
     },
     isDeleted: {
         type: String,
+        default: false,
+    },
+    isProfileCompleted: {
+        type: Boolean,
         default: false,
     }
 }, { timestamps: true });

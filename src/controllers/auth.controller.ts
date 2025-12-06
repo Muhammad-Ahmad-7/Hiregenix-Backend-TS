@@ -119,10 +119,22 @@ const login = asyncHandler(async (req: Request, res: Response) => {
 
     const accessToken = await user.generateAccessToken()
 
-    const candidate = await CandidateModel.findOne({ userId: user._id });
+    let isProfileCompleted = false;
 
-    if (!candidate) {
-        return responseHelper(res, 400, "Failed", "Candidate not found.");
+    if (user.role === "candidate") {
+        const candidate = await CandidateModel.findOne({ userId: user._id });
+
+        if (!candidate) {
+            return responseHelper(res, 400, "Failed", "Candidate not found.");
+        }
+
+        isProfileCompleted = candidate.isProfileCompleted;
+    } else {
+        const company = await CompanyModel.findOne({ userId: user._id });
+        if (!company) {
+            return responseHelper(res, 400, "Failed", "Company not found.");
+        }
+        isProfileCompleted = company.isProfileCompleted;
     }
 
     return responseHelper(res, 200, "Success", "Login successful.", {
@@ -132,7 +144,7 @@ const login = asyncHandler(async (req: Request, res: Response) => {
                 id: user._id,
                 email: user.email,
                 role: user.role,
-                isProfileCompleted: candidate.isProfileCompleted
+                isProfileCompleted
             }
         }
     })
