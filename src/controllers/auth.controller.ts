@@ -118,13 +118,21 @@ const login = asyncHandler(async (req: Request, res: Response) => {
     }
 
     const accessToken = await user.generateAccessToken()
+
+    const candidate = await CandidateModel.findOne({ userId: user._id });
+
+    if (!candidate) {
+        return responseHelper(res, 400, "Failed", "Candidate not found.");
+    }
+
     return responseHelper(res, 200, "Success", "Login successful.", {
         data: {
             accessToken,
             user: {
                 id: user._id,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                isProfileCompleted: candidate.isProfileCompleted
             }
         }
     })

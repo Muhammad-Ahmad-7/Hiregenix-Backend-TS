@@ -282,6 +282,16 @@ const getResumeParsedData = asyncHandler(async (req: Request, res: Response) => 
 });
 
 
+// const isProfileCompleted = asyncHandler(async (req: Request, res: Response) => {
+//     const userId = req.userId;
+
+//     if (!userId) {
+//         return responseHelper(res, 400, "Failed", "User ID is required.");
+//     }
+
+
+// })
+
 
 
 export { resumeParser, completeCandidateProfile, updateCandidateProfile, getCandidateProfile, getCandidateById, getResumeParsedData, getCandidateProfileById };
