@@ -54,7 +54,6 @@ const CandidateSchema = new Schema<ICandidate>({
     },
     contactNumber: {
         type: String,
-        unique: true,
         default: null
     },
     profilePictureUrl: {

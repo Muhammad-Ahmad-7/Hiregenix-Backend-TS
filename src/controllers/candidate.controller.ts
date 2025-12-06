@@ -28,10 +28,10 @@ const completeCandidateProfile = asyncHandler(async (req: Request, res: Response
         return responseHelper(res, 400, "Failed", "Profile already completed.");
     }
 
-    const existingCandidateWithPhone = await CandidateModel.findOne({ contactNumber });
-    if (existingCandidateWithPhone) {
-        return responseHelper(res, 400, "Failed", "Candidate with this phone number already exists.");
-    }
+    // const existingCandidateWithPhone = await CandidateModel.findOne({ contactNumber });
+    // if (existingCandidateWithPhone) {
+    //     return responseHelper(res, 400, "Failed", "Candidate with this phone number already exists.");
+    // }
 
     const updatedCandidate = await CandidateModel.findByIdAndUpdate(
         existingCandidate._id,
@@ -50,6 +50,7 @@ const completeCandidateProfile = asyncHandler(async (req: Request, res: Response
             bio,
             tagline,
             resumeId: null,
+            isProfileCompleted: true,
         },
         { new: true }
     ).populate("userId", "email role");
@@ -96,7 +97,7 @@ const completeCandidateProfile = asyncHandler(async (req: Request, res: Response
 const updateCandidateProfile = asyncHandler(async (req: Request, res: Response) => {
     const { candidateId } = req.params;
 
-    const existingCandidate = await CandidateModel.findById(candidateId);
+    const existingCandidate = await CandidateModel.findOne({ userId: candidateId });
 
     if (!existingCandidate) {
         return responseHelper(res, 404, "Failed", "Candidate not found.");
@@ -105,7 +106,7 @@ const updateCandidateProfile = asyncHandler(async (req: Request, res: Response) 
     const { fullName, dateOfBirth, gender, country, city, contactNumber, profilePictureUrl, githubUrl, linkedinUrl, portfolioUrl, skills, bio, tagline } = req.body;
 
     const updatedCandidate = await CandidateModel.findByIdAndUpdate(
-        candidateId,
+        existingCandidate._id,
         {
             fullName: fullName || existingCandidate.fullName,
             dateOfBirth: dateOfBirth || existingCandidate.dateOfBirth,
