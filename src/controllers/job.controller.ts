@@ -92,7 +92,8 @@ const getAllJobsWithPagination = asyncHandler(async (req: Request, res: Response
 
     const jobs = await JobModel.find({
         ...query,
-        isDeleted: false
+        isDeleted: false,
+        isOpen: true
     })
         .sort({ _id: -1 })
         .limit(limit)

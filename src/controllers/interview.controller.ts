@@ -107,8 +107,8 @@ const getTodayCandidateInterviews = asyncHandler(
       candidateId: userId,
       scheduledDate: { $gte: start, $lte: end },
     })
-      .populate("jobId", "title workMode deadline")
-      .populate("companyId", "companyName")
+      .populate("jobId")
+      .populate("companyId")
       .sort({ scheduledDate: -1 });
     if (!interviews) {
       return responseHelper(res, 500, "Failed", "Failed to fetch interviews.");

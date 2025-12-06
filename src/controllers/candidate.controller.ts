@@ -282,16 +282,45 @@ const getResumeParsedData = asyncHandler(async (req: Request, res: Response) => 
 });
 
 
-// const isProfileCompleted = asyncHandler(async (req: Request, res: Response) => {
-//     const userId = req.userId;
+const getCandidateDashboardStats = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.userId;
 
-//     if (!userId) {
-//         return responseHelper(res, 400, "Failed", "User ID is required.");
-//     }
+    const userAppliedJobsCount = await InterviewModel.countDocuments({ candidateId: userId });
+    const userActiveJobsCount = await InterviewModel.countDocuments({ candidateId: userId, status: "scheduled" });
+    const resumeData = await ResumeModel.findOne({ candidateId: userId });
+
+    const recentAppliedJobs = await InterviewModel.find({ candidateId: userId }).sort({ createdAt: -1 }).limit(5);
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const interviews = await InterviewModel.find({
+        candidateId: userId,
+        scheduledDate: { $gte: start, $lte: end },
+    })
+        .populate("jobId")
+        .populate("companyId")
+        .sort({ scheduledDate: -1 });
 
 
-// })
+    return responseHelper(res, 200, "Success", "Dashboard stats fetched successfully.", {
+        data: {
+            userAppliedJobsCount: userAppliedJobsCount || 0,
+            resumeScore: resumeData?.aiScore || 0,
+            userActiveJobsCount: userActiveJobsCount || 0,
+            matchedJobsCounts: 10,
+            recentAppliedJobs: recentAppliedJobs || [],
+            getTodaysInterview: interviews || []
+        }
+    });
+
+})
 
 
 
-export { resumeParser, completeCandidateProfile, updateCandidateProfile, getCandidateProfile, getCandidateById, getResumeParsedData, getCandidateProfileById };
+
+
+export { resumeParser, completeCandidateProfile, updateCandidateProfile, getCandidateProfile, getCandidateById, getResumeParsedData, getCandidateProfileById, getCandidateDashboardStats };

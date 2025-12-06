@@ -8,6 +8,7 @@ import { TaskModel } from "../models/task.model.js";
 import { sendToQueue } from "../config/rabbitmq.js";
 import { JOB_DESCRIPTION_EMBEDDINGS_QUEUE } from "../utils/constant.js";
 import { qdrantClient } from "../server.js";
+import { InterviewModel } from "../models/interview.model.js";
 
 const completeCompanyProfile = asyncHandler(async (req: Request, res: Response) => {
     // take out all the input data from the req.body
@@ -73,11 +74,20 @@ const getDashboardStats = asyncHandler(async (req: Request, res: Response) => {
 
     const postedJobsCount = await JobModel.countDocuments({ companyId, isDeleted: false });
     const activeJobsCount = await JobModel.countDocuments({ companyId, status: "open", isDeleted: false });
+    const closedJobsCount = await JobModel.countDocuments({ companyId, status: "closed", isDeleted: false });
+    const appliedJobsCount = await InterviewModel.countDocuments({ companyId });
+
+    const activeJobs = await JobModel.find({ companyId, status: "open", isDeleted: false }).limit(5).sort({ createdAt: -1 });
+    const recentApplications = await InterviewModel.find({ companyId }).sort({ createdAt: -1 }).limit(5);
 
     return responseHelper(res, 200, "Success", "Company stats fetched successfully.", {
         data: {
             postedJobsCount,
-            activeJobsCount
+            activeJobsCount,
+            appliedJobsCount,
+            closedJobsCount,
+            activeJobs,
+            recentApplications: recentApplications || []
         }
     });
 
