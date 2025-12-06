@@ -3,7 +3,7 @@ import isLoggedIn from "../middlewares/auth.middleware.js";
 import { isCompany } from "../middlewares/company.middleware.js";
 import { validateRequest } from "../middlewares/validate.middleware.js";
 import { companyProfileCreationSchema, getJobByIdSchema, jobCreationSchema, jobDeletionSchema, updateJobSchema } from "../validators/company.validator.js";
-import { createJob, deleteJob, getCompanyOpenJobs, getAllAppliedJobsOfCandidate, getAllJobs, getAllJobsWithPagination, getJobById, getRecommendedJobs, updateJobById, getCompanyClosedJobs, getInterviewApplicationsForJob, saveJobById, getSavedJobsOfCandidate } from "../controllers/job.controller.js";
+import { createJob, deleteJob, getCompanyOpenJobs, getAllAppliedJobsOfCandidate, getAllJobs, getAllJobsWithPagination, getJobById, getRecommendedJobs, updateJobById, getCompanyClosedJobs, getInterviewApplicationsForJob, saveJobById, getSavedJobsOfCandidate, unSaveJobById } from "../controllers/job.controller.js";
 import { isCandidate } from "../middlewares/candidate.middleware.js";
 
 const jobRouter = express.Router()
@@ -21,5 +21,6 @@ jobRouter.get("/all", isLoggedIn, getAllJobs);
 jobRouter.get("/interview-applications/:jobId", isLoggedIn, isCompany, getInterviewApplicationsForJob);
 jobRouter.post("/save/:jobId", isLoggedIn, isCandidate, saveJobById);
 jobRouter.get("/save", isLoggedIn, isCandidate, getSavedJobsOfCandidate);
+jobRouter.delete("/unsave/:savedJobId", isLoggedIn, isCandidate, unSaveJobById);
 
 export default jobRouter;

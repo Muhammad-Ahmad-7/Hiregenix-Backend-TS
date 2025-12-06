@@ -492,6 +492,26 @@ const saveJobById = asyncHandler(async (req: Request, res: Response) => {
 
 });
 
+const unSaveJobById = asyncHandler(async (req: Request, res: Response) => {
+    const { savedJobId } = req.params;
+
+    if (!savedJobId) {
+        return responseHelper(res, 400, "Failed", "Job Id is required.")
+    }
+
+    const savedJob = await SavedJobModel.findByIdAndDelete(savedJobId);
+
+    if (!savedJob) {
+        return responseHelper(res, 400, "Failed", "Failed to unsave the job.")
+    }
+
+    return responseHelper(res, 200, "Success", "Job Unsaved Successfully.", {
+        data: {
+            savedJob
+        }
+    });
+})
+
 const getSavedJobsOfCandidate = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.userId;
 
@@ -520,4 +540,4 @@ const getSavedJobsOfCandidate = asyncHandler(async (req: Request, res: Response)
 });
 
 
-export { createJob, deleteJob, getAllJobsWithPagination, getRecommendedJobs, getJobById, updateJobById, getCompanyOpenJobs, getCompanyClosedJobs, getAllAppliedJobsOfCandidate, getAllJobs, getInterviewApplicationsForJob, saveJobById, getSavedJobsOfCandidate }
+export { createJob, deleteJob, getAllJobsWithPagination, getRecommendedJobs, getJobById, updateJobById, getCompanyOpenJobs, getCompanyClosedJobs, getAllAppliedJobsOfCandidate, getAllJobs, getInterviewApplicationsForJob, saveJobById, getSavedJobsOfCandidate, unSaveJobById }
