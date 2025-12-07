@@ -12,6 +12,7 @@ import { RecommendedJobModel } from "../models/recommended_jobs.model.js";
 import CandidateModel from "../models/candidate.model.js";
 import { InterviewModel } from "../models/interview.model.js";
 import { SavedJobModel } from "../models/save_job.model.js";
+import mongoose from "mongoose";
 
 
 const createJob = asyncHandler(async (req: Request, res: Response) => {
@@ -85,39 +86,104 @@ const createJob = asyncHandler(async (req: Request, res: Response) => {
 });
 
 const getAllJobsWithPagination = asyncHandler(async (req: Request, res: Response) => {
-    const limit = parseInt(typeof req.query.limit === "string" ? req.query.limit : "10", 10);
-    const lastId = req.query.lastId;
+    const limit = parseInt(req.query.limit as string ?? "10", 10);
+    const lastId = req.query.lastId as string | undefined;
 
-    const query = lastId ? { _id: { $lt: lastId } } : {};
+    const userId = req.userId; // adjust if needed
 
-    const jobs = await JobModel.find({
-        ...query,
+    // Base match conditions
+    const matchConditions: any = {
         isDeleted: false,
         status: "open"
-    })
-        .sort({ createdAt: -1 })
-        .limit(limit)
-        .populate("companyId");
+    };
 
-    console.log("jobs", jobs)
+    if (lastId) {
+        matchConditions._id = { $lt: new mongoose.Types.ObjectId(lastId) };
+    }
+
+    const jobs = await JobModel.aggregate([
+        { $match: matchConditions },
+
+        { $sort: { createdAt: -1 } },
+
+        { $limit: limit },
+
+        // Populate company
+        {
+            $lookup: {
+                from: "companies",
+                localField: "companyId",
+                foreignField: "_id",
+                as: "company"
+            }
+        },
+        {
+            $unwind: {
+                path: "$company",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        // Lookup saved jobs for this user
+        {
+            $lookup: {
+                from: "savedjobs",
+                let: {
+                    jobId: "$_id",
+                    candidateId: new mongoose.Types.ObjectId(userId) // Move ObjectId creation here
+                },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ["$jobId", "$$jobId"] },
+                                    { $eq: ["$candidateId", "$$candidateId"] } // Use the variable from let
+                                ]
+                            }
+                        }
+                    }
+                ],
+                as: "savedRelation"
+            }
+        },
+
+        // Add isSaved flag
+        {
+            $addFields: {
+                isSaved: { $gt: [{ $size: "$savedRelation" }, 0] }
+            }
+        },
+
+        // Remove unneeded lookup data
+        {
+            $project: {
+                savedRelation: 0
+            }
+        }
+    ]);
 
     if (!jobs) {
         return responseHelper(res, 500, "Failed", "Failed to fetch jobs.");
     }
 
     if (jobs.length === 0) {
-        return responseHelper(res, 201, "Success", "No jobs found")
+        return responseHelper(res, 200, "Success", "No jobs found");
     }
 
-    const nextCursor = jobs.length && jobs[jobs.length - 1] ? jobs[jobs.length - 1]!._id : null
+    // next cursor
+    const nextCursor = jobs[jobs.length - 1]?._id ?? null;
 
-    return responseHelper(res, 200, "Success", "Jobs fetched successfully.", {
-        data: {
-            jobs,
+    return responseHelper(
+        res,
+        200,
+        "Success",
+        "Jobs fetched successfully.",
+        {
+            data: { jobs }
         },
-    }, {
-        nextCursor
-    });
+        { nextCursor }
+    );
 });
 
 const getJobById = asyncHandler(async (req: Request, res: Response) => {
@@ -417,7 +483,71 @@ const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const jobs = await JobModel.find({}).populate("companyId", "companyName").skip(skip).limit(limit).sort({ createdAt: -1 });
+    const userId = req.userId; // adjust if needed
+
+    const jobs = await JobModel.aggregate([
+        { $match: {} },
+
+        { $sort: { createdAt: -1 } },
+
+        { $skip: skip },
+
+        { $limit: limit },
+
+        // Populate company
+        {
+            $lookup: {
+                from: "companies",
+                localField: "companyId",
+                foreignField: "_id",
+                as: "company"
+            }
+        },
+        {
+            $unwind: {
+                path: "$company",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        // Lookup saved jobs for this user
+        {
+            $lookup: {
+                from: "savedjobs",
+                let: {
+                    jobId: "$_id",
+                    currentUserId: new mongoose.Types.ObjectId(userId)
+                },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ["$jobId", "$$jobId"] },
+                                    { $eq: ["$candidateId", "$$currentUserId"] }
+                                ]
+                            }
+                        }
+                    }
+                ],
+                as: "savedRelation"
+            }
+        },
+
+        // Add isSaved flag
+        {
+            $addFields: {
+                isSaved: { $gt: [{ $size: "$savedRelation" }, 0] }
+            }
+        },
+
+        // Remove unneeded lookup data and reshape company
+        {
+            $project: {
+                savedRelation: 0,
+            }
+        }
+    ]);
 
     if (!jobs) {
         return responseHelper(res, 500, "Failed", "Failed to fetch applied jobs.");
@@ -479,6 +609,12 @@ const saveJobById = asyncHandler(async (req: Request, res: Response) => {
 
     if (!job) {
         return responseHelper(res, 404, "Failed", "Job not found with this id.");
+    }
+
+    const findExistingSaveJob = await SavedJobModel.findOne({ jobId: job._id, candidateId: userId });
+
+    if (findExistingSaveJob) {
+        return responseHelper(res, 400, "Failed", "You have already saved this job.");
     }
 
     const savedJob = await SavedJobModel.create({

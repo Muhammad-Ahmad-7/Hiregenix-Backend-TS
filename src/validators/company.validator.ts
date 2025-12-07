@@ -54,7 +54,7 @@ export const jobCreationSchema = z.object({
     }),
 
     salaryRange: z.object({
-        min: z.number(),
+        min: z.number().min(0),
         max: z.number(),
         currency: z.string().min(2).max(10),
     }),
