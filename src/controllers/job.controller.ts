@@ -540,5 +540,31 @@ const getSavedJobsOfCandidate = asyncHandler(async (req: Request, res: Response)
     });
 });
 
+const getAllCompanyJobs = asyncHandler(async (req: Request, res: Response) => {
+    const companyId = req.userId;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
 
-export { createJob, deleteJob, getAllJobsWithPagination, getRecommendedJobs, getJobById, updateJobById, getCompanyOpenJobs, getCompanyClosedJobs, getAllAppliedJobsOfCandidate, getAllJobs, getInterviewApplicationsForJob, saveJobById, getSavedJobsOfCandidate, unSaveJobById }
+    const jobs = await JobModel.find({ companyId: companyId, status: "open" }).skip(skip).limit(limit).sort({ createdAt: -1 });
+
+    if (!jobs) {
+        return responseHelper(res, 500, "Failed", "Failed to fetch applied jobs.");
+    }
+
+    const totalJobs = await JobModel.countDocuments({ companyId: companyId, status: "open" });
+
+    return responseHelper(res, 200, "Success", "Company all jobs fetched successfully.", {
+        data: {
+            jobs,
+        },
+    }, {
+        total: totalJobs,
+        page: page,
+        limit: limit,
+        totalPages: Math.ceil(totalJobs / limit),
+    });
+})
+
+
+export { createJob, deleteJob, getAllJobsWithPagination, getRecommendedJobs, getJobById, updateJobById, getCompanyOpenJobs, getCompanyClosedJobs, getAllAppliedJobsOfCandidate, getAllJobs, getInterviewApplicationsForJob, saveJobById, getSavedJobsOfCandidate, unSaveJobById, getAllCompanyJobs }
