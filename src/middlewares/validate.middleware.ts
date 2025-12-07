@@ -1,28 +1,36 @@
-import { ZodError, ZodType, z } from "zod";
+import { ZodError, ZodTypeAny, z } from "zod";
 import { Request, Response, NextFunction } from "express";
 
-export const validateRequest = (schema: ZodType) => {
+export const validateRequest = (schema: ZodTypeAny) => {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             await schema.parseAsync(req.body);
-            next();
+            return next();
         } catch (error) {
             if (error instanceof ZodError) {
-                const result = z.flattenError(error);
-                const fieldErrors = result.fieldErrors;
+                // Fix typing properly
+                const flattened = z.flattenError(error);
+                const fieldErrors: Record<string, string[] | undefined> = flattened.fieldErrors;
 
-                // flatten all errors into a single string
-                const allMessages =
-                    Object.values(fieldErrors)
-                        .flat()
-                        .join(", ") || "Validation failed";
+                const cleanedErrors: Record<string, string[]> = {};
+
+                for (const [field, messages] of Object.entries(fieldErrors)) {
+                    const safeMessages = Array.isArray(messages) ? messages : [];
+
+                    cleanedErrors[field] = safeMessages.map((msg: string) =>
+                        msg.replace(/\\"/g, '"')
+                    );
+                }
+
+                const formattedMessages = Object.entries(cleanedErrors).map(
+                    ([field, messages]) => `ERROR in ${field}: ${messages.join(", ")}`
+                );
 
                 res.status(400).json({
                     status: "error",
-                    message: allMessages,   // <-- all errors combined here
-                    errors: fieldErrors,     // detailed field-level errors
+                    message: formattedMessages.join(" | "),
+                    errors: cleanedErrors
                 });
-
                 return;
             }
 
@@ -30,7 +38,7 @@ export const validateRequest = (schema: ZodType) => {
 
             res.status(500).json({
                 status: "error",
-                message: "Internal server error",
+                message: "Internal server error"
             });
 
             return;
