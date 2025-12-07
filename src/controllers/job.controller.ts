@@ -307,6 +307,10 @@ const deleteJob = asyncHandler(async (req: Request, res: Response) => {
         return responseHelper(res, 400, "Failed", "Job not found.");
     }
 
+    if (job.isDeleted) {
+        return responseHelper(res, 400, "Failed", "Job already deleted.");
+    }
+
     const updateJob = await JobModel.findByIdAndUpdate(
         job._id,
         {
@@ -637,17 +641,28 @@ const saveJobById = asyncHandler(async (req: Request, res: Response) => {
 
 const unSaveJobById = asyncHandler(async (req: Request, res: Response) => {
     const { savedJobId } = req.params;
+    const userId = req.userId;
 
     if (!savedJobId) {
         return responseHelper(res, 400, "Failed", "Job Id is required.")
     }
 
-    const savedJob = await SavedJobModel.findByIdAndDelete(savedJobId);
+    const savedJob = await SavedJobModel.findById(savedJobId);
+
 
     if (!savedJob) {
-        return responseHelper(res, 400, "Failed", "Failed to unsave the job.")
+        return responseHelper(res, 400, "Failed", "There is no saved job exist with this document _id")
     }
 
+    if (savedJob.candidateId.toString() !== userId) {
+        return responseHelper(res, 400, "Failed", "You can not unsave other candidates job.")
+    }
+
+    const deleteSaveJob = await SavedJobModel.findByIdAndDelete(savedJob._id);
+
+    if (!deleteSaveJob) {
+        return responseHelper(res, 400, "Failed", "Unsave operation failed.")
+    }
     return responseHelper(res, 200, "Success", "Job Unsaved Successfully.", {
         data: {
             savedJob
