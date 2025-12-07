@@ -5,6 +5,7 @@ import connectDB from "./config/db.js";
 import dotenv from "dotenv";
 import { connectToQdrant } from "./config/qdrant.js";
 import connectToRabbitMQ from "./config/rabbitmq.js";
+import interviewReminderJob from "./cron/interviewCron.js";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ export const qdrantClient = connectToQdrant();
 connectDB()
     .then(() => {
         server.listen(PORT, () => {
+            interviewReminderJob();
             console.log(`🚀 Server running at http://localhost:${PORT}`);
         });
     })

@@ -1,0 +1,71 @@
+<html>
+
+<head>
+    <style>
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2A5BD7;
+        }
+
+        .button {
+            background-color: #698eea;
+            border: none;
+            color: white;
+            padding: 14px 28px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+
+        .footer {
+            font-size: 13px;
+            color: #777;
+            margin-top: 40px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="brand">Hiregenx</div>
+        </div>
+
+        <h2>Interview Reminder</h2>
+        <p>Hi {{candidateName}},</p>
+
+        <p>This is a friendly reminder for your upcoming interview for the position of <strong>{{jobTitle}}</strong> at
+            <strong>{{companyName}}</strong>.</p>
+
+        <p>Here are some guidelines to help you prepare:</p>
+        <p>{{interviewGuideline}}</p>
+
+        <p>We wish you the best of luck!</p>
+
+        <div class="footer">
+            <p>© {{year}} Hiregenx. All rights reserved.<br>
+                Smarter hiring, powered by AI.</p>
+        </div>
+    </div>
+</body>
+
+</html>

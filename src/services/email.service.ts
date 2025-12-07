@@ -103,4 +103,43 @@ export class EmailService {
             throw new Error('Failed to send password reset email');
         }
     }
+
+    static async sendInterviewReminderEmail(
+        to: string,
+        candidateName: string,
+        jobTitle: string,
+        companyName: string,
+        interviewGuideline: string
+    ) {
+        try {
+            // Load template
+            const template = await this.getTemplate('interviewReminder');
+
+            // Replace template variables
+            const html = this.replaceTemplateVariables(template, {
+                candidateName,
+                jobTitle,
+                companyName,
+                interviewGuideline,
+                year: new Date().getFullYear().toString()
+            });
+
+            // Mail options
+            const mailOptions = {
+                from: `"Hiregenx" <${config.email.user}>`,
+                to,
+                subject: `Reminder: Interview for ${jobTitle}`,
+                html,
+            };
+
+            // Send email
+            const info = await this.transporter.sendMail(mailOptions);
+            console.log('Interview reminder email sent successfully:', info.messageId);
+
+        } catch (error) {
+            console.error("Error sending interview reminder email:", error);
+            throw new Error("Failed to send interview reminder email");
+        }
+    }
+
 }
