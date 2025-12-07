@@ -78,7 +78,7 @@ const getDashboardStats = asyncHandler(async (req: Request, res: Response) => {
     const appliedJobsCount = await InterviewModel.countDocuments({ companyId });
 
     const activeJobs = await JobModel.find({ companyId, status: "open", isDeleted: false }).limit(5).sort({ createdAt: -1 });
-    const recentApplications = await InterviewModel.find({ companyId }).sort({ createdAt: -1 }).limit(5);
+    const recentApplications = await InterviewModel.find({ companyId }).sort({ createdAt: -1 }).limit(5).populate("candidateId").populate("jobId");
 
     return responseHelper(res, 200, "Success", "Company stats fetched successfully.", {
         data: {
