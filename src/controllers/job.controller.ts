@@ -93,14 +93,20 @@ const getAllJobsWithPagination = asyncHandler(async (req: Request, res: Response
     const jobs = await JobModel.find({
         ...query,
         isDeleted: false,
-        isOpen: true
+        status: "open"
     })
-        .sort({ _id: -1 })
+        .sort({ createdAt: -1 })
         .limit(limit)
-        .populate("companyId", "companyName logoUrl website");
+        .populate("companyId");
 
-    if (!jobs || jobs.length === 0) {
+    console.log("jobs", jobs)
+
+    if (!jobs) {
         return responseHelper(res, 500, "Failed", "Failed to fetch jobs.");
+    }
+
+    if (jobs.length === 0) {
+        return responseHelper(res, 201, "Success", "No jobs found")
     }
 
     const nextCursor = jobs.length && jobs[jobs.length - 1] ? jobs[jobs.length - 1]!._id : null

@@ -289,7 +289,7 @@ const getCandidateDashboardStats = asyncHandler(async (req: Request, res: Respon
     const userActiveJobsCount = await InterviewModel.countDocuments({ candidateId: userId, status: "scheduled" });
     const resumeData = await ResumeModel.findOne({ candidateId: userId });
 
-    const recentAppliedJobs = await InterviewModel.find({ candidateId: userId }).sort({ createdAt: -1 }).limit(5);
+    const recentAppliedJobs = await InterviewModel.find({ candidateId: userId }).sort({ createdAt: -1 }).limit(5).populate("jobId");
 
     const start = new Date();
     start.setHours(0, 0, 0, 0);
