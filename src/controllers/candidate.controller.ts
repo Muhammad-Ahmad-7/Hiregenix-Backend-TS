@@ -95,9 +95,9 @@ const completeCandidateProfile = asyncHandler(async (req: Request, res: Response
 });
 
 const updateCandidateProfile = asyncHandler(async (req: Request, res: Response) => {
-    const { candidateId } = req.params;
+    const candidateId = req.userId;
 
-    const existingCandidate = await CandidateModel.findOne({ userId: candidateId });
+    const existingCandidate = await CandidateModel.findById({ _id: candidateId });
 
     if (!existingCandidate) {
         return responseHelper(res, 404, "Failed", "Candidate not found.");
