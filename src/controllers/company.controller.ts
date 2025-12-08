@@ -131,6 +131,13 @@ const updatedCompanyProfile = asyncHandler(async (req: Request, res: Response) =
         website
     } = req.body;
 
+    if (companyName) {
+        const findCompanyByName = await CompanyModel.findOne({ companyName });
+        if (findCompanyByName) {
+            return responseHelper(res, 400, "Failed", "Company with the same already exist.");
+        }
+    }
+
     const updatedCompany = await CompanyModel.findByIdAndUpdate(
         existingCompany._id,
         {
