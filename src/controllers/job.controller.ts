@@ -106,6 +106,8 @@ const getAllJobsWithPagination = asyncHandler(async (req: Request, res: Response
 
         { $sort: { createdAt: -1 } },
 
+        { $match: { deadline: { $gte: new Date() } } },
+
         { $limit: limit },
 
         // Populate company
@@ -493,6 +495,8 @@ const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
         { $match: {} },
 
         { $sort: { createdAt: -1 } },
+
+        { $match: { deadline: { $gte: new Date() } } },
 
         { $skip: skip },
 
