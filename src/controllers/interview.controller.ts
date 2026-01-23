@@ -93,6 +93,8 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   );
 });
 
+// const rescheduleInterview = asyncHandler()
+
 const getTodayCandidateInterviews = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.userId;
@@ -170,8 +172,42 @@ const getAllCandidateInterviews = asyncHandler(
   }
 );
 
+const getCandidateInterviewById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.userId;
+    const { interviewId } = req.params;
+
+    const interview = await InterviewModel.findById(interviewId).populate(
+      "jobId",
+      "title role workMode deadline"
+    ).populate(
+      "companyId",
+      "companyName logoUrl"
+    );
+    if (!interview) {
+      return responseHelper(res, 404, "Failed", "Interview not found.");
+    }
+    if (interview.candidateId.toString() !== userId) {
+      return responseHelper(res, 403, "Failed", "Unauthorized access.");
+    }
+
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Interview fetched successfully.",
+      {
+        data: {
+          interview,
+        },
+      }
+    );
+  }
+);
+
 export {
   scheduleInterview,
   getTodayCandidateInterviews,
   getAllCandidateInterviews,
+  getCandidateInterviewById
 };
