@@ -31,6 +31,7 @@ const fileFilter: multer.Options["fileFilter"] = (_req, file, cb) => {
         "audio/wav",
         "video/mp4",
         "video/mpeg",
+        "video/webm",
     ];
 
     if (allowedMimes.includes(file.mimetype)) {

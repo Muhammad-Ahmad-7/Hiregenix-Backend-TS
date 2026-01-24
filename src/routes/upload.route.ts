@@ -1,8 +1,8 @@
 import express, { Request, Response } from "express";
 import responseHelper from "../utils/responseHelper.js";
 import cloudinary from "../config/cloudinary.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
 import fs from "fs";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import isLoggedIn from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/multer.middleware.js";
 

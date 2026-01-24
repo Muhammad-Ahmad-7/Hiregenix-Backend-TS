@@ -3,6 +3,10 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { JobModel } from "../models/job.model.js";
 import responseHelper from "../utils/responseHelper.js";
 import { InterviewModel } from "../models/interview.model.js";
+import cloudinary from "../config/cloudinary.js";
+import fs from "fs";
+import QuestionResultModel from "../models/question-result.model.js";
+import { isValidObjectId } from "mongoose";
 
 const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   // Implementation for scheduling interview
@@ -205,9 +209,77 @@ const getCandidateInterviewById = asyncHandler(
   }
 );
 
+const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Response) => {
+  console.log("in api");
+  const file = req.file;
+  const { interviewId, questionId, questionText } = req.body;
+
+
+
+  if (!interviewId || !questionId || !questionText) {
+    return responseHelper(res, 400, "Failed", "Missing required fields.");
+  }
+
+  if (!isValidObjectId(interviewId)) {
+    return responseHelper(res, 400, "Failed", "Invalid interview ID.");
+  }
+
+  const interview = await InterviewModel.findById(interviewId);
+  if (!interview) {
+    return responseHelper(res, 404, "Failed", "Interview not found.");
+  }
+  if (!file) {
+    return responseHelper(res, 400, "Failed", "No file uploaded.");
+  }
+  const questionResultExists = await QuestionResultModel.findOne({
+    interviewId,
+    questionId,
+  });
+
+  if (questionResultExists) {
+    return responseHelper(res, 400, "Failed", "Question result already exists.");
+  }
+
+  // upload to cloudinary
+  const result = await cloudinary.uploader.upload(file.path, {
+    resource_type: "auto", // handles images, pdfs, docx, audio, video
+  });
+
+  // delete local file
+  fs.unlinkSync(file.path);
+
+  // db call to create a new question result document
+  const questionResult = await QuestionResultModel.create({
+    interviewId,
+    questionId,
+    questionText,
+    videoUrl: result.secure_url,
+    stages: {
+      uploaded: true,
+    }
+  });
+
+  if (!questionResult) {
+    return responseHelper(res, 500, "Failed", "Failed to create question result.");
+  }
+
+  const { status, stages: { uploaded }, _id: questionResultId } = questionResult;
+
+  // Enqueue background jobs for processing (STT, analysis, LLM evaluation, etc.) here
+
+  return responseHelper(res, 200, "Success", "Question result created successfully.", {
+    data: {
+      questionResult: {
+        status, stages: { uploaded }, _id: questionResultId
+      }
+    },
+  });
+});
+
 export {
   scheduleInterview,
   getTodayCandidateInterviews,
   getAllCandidateInterviews,
-  getCandidateInterviewById
+  getCandidateInterviewById,
+  createInterviewQuestionResult,
 };
