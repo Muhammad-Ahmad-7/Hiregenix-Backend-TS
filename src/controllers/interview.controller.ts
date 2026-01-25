@@ -211,8 +211,7 @@ const getCandidateInterviewById = asyncHandler(
 
 const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Response) => {
   console.log("in api");
-  const file = req.file;
-  const { interviewId, questionId, questionText } = req.body;
+  const { interviewId, questionId, questionText, videoUrl } = req.body;
 
 
 
@@ -228,9 +227,6 @@ const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Res
   if (!interview) {
     return responseHelper(res, 404, "Failed", "Interview not found.");
   }
-  if (!file) {
-    return responseHelper(res, 400, "Failed", "No file uploaded.");
-  }
   const questionResultExists = await QuestionResultModel.findOne({
     interviewId,
     questionId,
@@ -240,20 +236,12 @@ const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Res
     return responseHelper(res, 400, "Failed", "Question result already exists.");
   }
 
-  // upload to cloudinary
-  const result = await cloudinary.uploader.upload(file.path, {
-    resource_type: "auto", // handles images, pdfs, docx, audio, video
-  });
-
-  // delete local file
-  fs.unlinkSync(file.path);
-
   // db call to create a new question result document
   const questionResult = await QuestionResultModel.create({
     interviewId,
     questionId,
     questionText,
-    videoUrl: result.secure_url,
+    videoUrl,
     stages: {
       uploaded: true,
     }
