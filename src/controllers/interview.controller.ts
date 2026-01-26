@@ -7,6 +7,9 @@ import cloudinary from "../config/cloudinary.js";
 import fs from "fs";
 import QuestionResultModel from "../models/question-result.model.js";
 import { isValidObjectId } from "mongoose";
+import { TaskModel } from "../models/task.model.js";
+import { SPEECH_TO_TEXT_QUEUE } from "../utils/constant.js";
+import { sendToQueue } from "../config/rabbitmq.js";
 
 const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   // Implementation for scheduling interview
@@ -210,7 +213,6 @@ const getCandidateInterviewById = asyncHandler(
 );
 
 const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Response) => {
-  console.log("in api");
   const { interviewId, questionId, questionText, videoUrl } = req.body;
 
 
@@ -224,6 +226,7 @@ const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Res
   }
 
   const interview = await InterviewModel.findById(interviewId);
+  const userId = req.userId;
   if (!interview) {
     return responseHelper(res, 404, "Failed", "Interview not found.");
   }
@@ -254,6 +257,20 @@ const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Res
   const { status, stages: { uploaded }, _id: questionResultId } = questionResult;
 
   // Enqueue background jobs for processing (STT, analysis, LLM evaluation, etc.) here
+
+  const newTask = await TaskModel.create({
+    userId: userId,
+    type: "speech_to_text",
+    payload: { questionResultId: (questionResult._id as string).toString() },
+    status: "pending"
+  })
+
+  if (!newTask) {
+    console.log("ERROR :: Task not created")
+    return;
+  }
+
+  sendToQueue(SPEECH_TO_TEXT_QUEUE, (newTask._id as string).toString());
 
   return responseHelper(res, 200, "Success", "Question result created successfully.", {
     data: {

@@ -2,25 +2,25 @@ import mongoose, { Document, Schema } from "mongoose";
 
 
 export interface IQuestionResult extends Document {
-    _id: string;                      // MongoDB/DB primary key
+    _id: string;                        // MongoDB/DB primary key
     interviewId: Schema.Types.ObjectId; // FK to the Interview document
-    questionId: string;                // question id from question bank
-    questionText: string;              // Snapshot of question at the time of interview
-    candidateAnswer?: string;          // If text input is allowed
-    transcriptText?: string;           // STT transcript of candidate's spoken answer
-    videoUrl?: string;                 // URL to candidate's video for this question
-    audioUrl?: string;                 // URL to extracted audio from video
+    questionId: string;                 // question id from question bank
+    questionText: string;               // Snapshot of question at the time of interview
+    candidateAnswer?: string;           // If text input is allowed
+    transcriptText?: string;            // STT transcript of candidate's spoken answer
+    videoUrl?: string;                  // URL to candidate's video for this question
+    audioUrl?: string;                  // URL to extracted audio from video
     scores?: {
-        content?: number;              // score on the answer content
-        communication?: number;        // score on speech clarity, confidence
-        skill?: number;                // skill-specific score (mapped to question.skill)
-        overall?: number;              // aggregate score
+        content?: number;               // score on the answer content
+        communication?: number;         // score on speech clarity, confidence
+        skill?: number;                 // skill-specific score (mapped to question.skill)
+        overall?: number;               // aggregate score
     };
     lLMAnalysis?: {
-        confidenceScore?: number;      // 0-1 confidence of understanding answer
-        missingConcepts?: string[];    // extracted topics not covered
-        summary?: string;              // summary of answer
-        notes?: string;                // additional evaluation notes
+        confidenceScore?: number;       // 0-1 confidence of understanding answer
+        missingConcepts?: string[];     // extracted topics not covered
+        summary?: string;               // summary of answer
+        notes?: string;                 // additional evaluation notes
     };
     status: 'PROCESSING' | 'DONE' | 'FAILED';   // Main status of processing
 

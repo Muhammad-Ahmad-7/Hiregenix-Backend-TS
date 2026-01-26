@@ -12,10 +12,10 @@ dotenv.config();
 const PORT = config.port;
 const server = http.createServer(app);
 
-// connectToRabbitMQ().catch((err) => {
-//     console.error("Failed to connect to RabbitMQ", err);
-//     process.exit(1);
-// });
+connectToRabbitMQ().catch((err) => {
+    console.error("Failed to connect to RabbitMQ", err);
+    process.exit(1);
+});
 
 export const qdrantClient = connectToQdrant();
 
