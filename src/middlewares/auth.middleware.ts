@@ -22,13 +22,13 @@ interface DecodeToken { _id: string, userId: string, role: string, email: string
 const isLoggedIn = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return responseHelper(res, 401, "Failed", "Unauthorized: No token provided.");
+        return responseHelper(res, 401, "Failed", "Unauthorized: No token provided. Please login.");
     }
 
     const token = authHeader.split(" ")[1];
 
     if (!token) {
-        return responseHelper(res, 401, "Failed", "Unauthorized: No token provided.");
+        return responseHelper(res, 401, "Failed", "Unauthorized: No token provided. Please login.");
     }
 
     const decodeToken = jwt.verify(token, config.jwt.accessTokenSecret) as DecodeToken;

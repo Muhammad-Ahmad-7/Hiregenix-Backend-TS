@@ -1,5 +1,5 @@
 import amqb from "amqplib";
-import { RESUME_QUEUE } from "../utils/constant.js";
+import { RESUME_QUEUE, SPEECH_TO_TEXT_QUEUE, CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, JOB_DESCRIPTION_EMBEDDINGS_QUEUE } from "../utils/constant.js";
 
 export let channel: amqb.Channel | null = null;
 
@@ -8,6 +8,9 @@ export default async function connectToRabbitMQ() {
         const connection = await amqb.connect(process.env.RABBITMQ_URL || "amqp://localhost");
         channel = await connection.createChannel();
         await channel.assertQueue(RESUME_QUEUE, { durable: true });
+        await channel.assertQueue(SPEECH_TO_TEXT_QUEUE, { durable: true });
+        await channel.assertQueue(CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, { durable: true });
+        await channel.assertQueue(JOB_DESCRIPTION_EMBEDDINGS_QUEUE, { durable: true });
         console.log("Connected to RabbitMQ");
         return channel;
     } catch (error) {

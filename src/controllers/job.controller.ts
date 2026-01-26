@@ -385,7 +385,6 @@ const getCompanyOpenJobs = asyncHandler(async (req: Request, res: Response) => {
     });
 });
 
-
 const getCompanyClosedJobs = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.userId;
     const page = parseInt(req.query.page as string) || 1;
@@ -423,8 +422,6 @@ const getCompanyClosedJobs = asyncHandler(async (req: Request, res: Response) =>
         totalPages: Math.ceil(totalClosedJobs / limit),
     });
 });
-
-
 
 const getRecommendedJobs = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user._id;
@@ -728,4 +725,20 @@ const getAllCompanyJobs = asyncHandler(async (req: Request, res: Response) => {
 })
 
 
-export { createJob, deleteJob, getAllJobsWithPagination, getRecommendedJobs, getJobById, updateJobById, getCompanyOpenJobs, getCompanyClosedJobs, getAllAppliedJobsOfCandidate, getAllJobs, getInterviewApplicationsForJob, saveJobById, getSavedJobsOfCandidate, unSaveJobById, getAllCompanyJobs }
+export {
+    createJob,
+    deleteJob,
+    getAllJobsWithPagination,
+    getRecommendedJobs,
+    getJobById,
+    updateJobById,
+    getCompanyOpenJobs,
+    getCompanyClosedJobs,
+    getAllAppliedJobsOfCandidate,
+    getAllJobs,
+    getInterviewApplicationsForJob,
+    saveJobById,
+    getSavedJobsOfCandidate,
+    unSaveJobById,
+    getAllCompanyJobs
+}

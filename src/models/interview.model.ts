@@ -5,7 +5,7 @@ export interface IInterview extends Document {
     candidateId: Types.ObjectId;
     companyId: Types.ObjectId;
     jobId: Types.ObjectId;
-    type: "live" | "mock" | "video";
+    type: "live";
 
     scheduledDate?: Date;
     durationMins?: number;
@@ -19,22 +19,7 @@ export interface IInterview extends Document {
     | "no-show"               // Scheduled but not attended, job still open
     | "cancelled"             // Cancelled manually by candidate/company
     | "expired";              // Job deadline crossed, and interview never scheduled or completed
-
-    recordingUrl?: string;
-    transcriptText?: string;
-    voiceAnalysis?: any;
-    facialAnalysis?: any;
-
-    aiResult?: {
-        stars?: number;                // e.g., 1–5 stars rating from AI evaluation
-        score?: number;                // e.g., numeric score 0–100
-        summary?: string;              // AI-generated summary of performance
-        strengths?: string[];          // Key strengths detected
-        improvements?: string[];       // Areas to improve
-        aiReportUrl?: string;          // Link to full AI report
-    };
-
-    finalScore?: number;
+    questions: string[];
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -58,7 +43,6 @@ const InterviewSchema = new Schema<IInterview>(
         },
         type: {
             type: String,
-            enum: ["live", "mock", "video"],
             default: "live",
         },
         scheduledDate: Date,
@@ -77,19 +61,24 @@ const InterviewSchema = new Schema<IInterview>(
             ],
             default: "pending",
         },
-        recordingUrl: String,
-        transcriptText: String,
-        voiceAnalysis: Schema.Types.Mixed,
-        facialAnalysis: Schema.Types.Mixed,
-        aiResult: {
-            stars: Number,
-            score: Number,
-            summary: String,
-            strengths: [String],
-            improvements: [String],
-            aiReportUrl: String,
-        },
-        finalScore: Number,
+        questions: {
+            type: [String],
+            default: [
+                "Explain the difference between authentication and authorization in a web application.",
+                "Describe what happens from the moment a user types a URL into their browser until the page loads.",
+                "What are the primary differences between a REST API and GraphQL?",
+                "Define 'Idempotency' in the context of HTTP methods and why it matters for API design.",
+                "What is a deadlock in a database, and how can a developer prevent one from occurring.",
+                "Explain the concept of 'Horizontal Scaling' versus 'Vertical Scaling' for a server.",
+                "What is the purpose of a Message Queue like RabbitMQ or Kafka in a distributed system?",
+                "Describe the role of an ORM and name one potential disadvantage of using it.",
+                "What are 'Indexes' in a database and how do they speed up read operations?",
+                "What is the difference between a 'Stateful' and a 'Stateless' service architecture?",
+                "What is a 'Rate Limiter' and why is it important for public-facing APIs?",
+                "Explain the concept of 'Graceful Degradation' in backend services."
+            ],
+        }
+
     },
     { timestamps: true }
 );

@@ -3,6 +3,13 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { JobModel } from "../models/job.model.js";
 import responseHelper from "../utils/responseHelper.js";
 import { InterviewModel } from "../models/interview.model.js";
+import cloudinary from "../config/cloudinary.js";
+import fs from "fs";
+import QuestionResultModel from "../models/question-result.model.js";
+import { isValidObjectId } from "mongoose";
+import { TaskModel } from "../models/task.model.js";
+import { SPEECH_TO_TEXT_QUEUE } from "../utils/constant.js";
+import { sendToQueue } from "../config/rabbitmq.js";
 
 const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   // Implementation for scheduling interview
@@ -93,6 +100,8 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   );
 });
 
+// const rescheduleInterview = asyncHandler()
+
 const getTodayCandidateInterviews = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.userId;
@@ -170,8 +179,112 @@ const getAllCandidateInterviews = asyncHandler(
   }
 );
 
+const getCandidateInterviewById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.userId;
+    const { interviewId } = req.params;
+
+    const interview = await InterviewModel.findById(interviewId).populate(
+      "jobId",
+      "title role workMode deadline"
+    ).populate(
+      "companyId",
+      "companyName logoUrl"
+    );
+    if (!interview) {
+      return responseHelper(res, 404, "Failed", "Interview not found.");
+    }
+    if (interview.candidateId.toString() !== userId) {
+      return responseHelper(res, 403, "Failed", "Unauthorized access.");
+    }
+
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Interview fetched successfully.",
+      {
+        data: {
+          interview,
+        },
+      }
+    );
+  }
+);
+
+const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Response) => {
+  const { interviewId, questionId, questionText, videoUrl } = req.body;
+
+
+
+  if (!interviewId || !questionId || !questionText) {
+    return responseHelper(res, 400, "Failed", "Missing required fields.");
+  }
+
+  if (!isValidObjectId(interviewId)) {
+    return responseHelper(res, 400, "Failed", "Invalid interview ID.");
+  }
+
+  const interview = await InterviewModel.findById(interviewId);
+  const userId = req.userId;
+  if (!interview) {
+    return responseHelper(res, 404, "Failed", "Interview not found.");
+  }
+  const questionResultExists = await QuestionResultModel.findOne({
+    interviewId,
+    questionId,
+  });
+
+  if (questionResultExists) {
+    return responseHelper(res, 400, "Failed", "Question result already exists.");
+  }
+
+  // db call to create a new question result document
+  const questionResult = await QuestionResultModel.create({
+    interviewId,
+    questionId,
+    questionText,
+    videoUrl,
+    stages: {
+      uploaded: true,
+    }
+  });
+
+  if (!questionResult) {
+    return responseHelper(res, 500, "Failed", "Failed to create question result.");
+  }
+
+  const { status, stages: { uploaded }, _id: questionResultId } = questionResult;
+
+  // Enqueue background jobs for processing (STT, analysis, LLM evaluation, etc.) here
+
+  const newTask = await TaskModel.create({
+    userId: userId,
+    type: "speech_to_text",
+    payload: { questionResultId: (questionResult._id as string).toString() },
+    status: "pending"
+  })
+
+  if (!newTask) {
+    console.log("ERROR :: Task not created")
+    return;
+  }
+
+  sendToQueue(SPEECH_TO_TEXT_QUEUE, (newTask._id as string).toString());
+
+  return responseHelper(res, 200, "Success", "Question result created successfully.", {
+    data: {
+      questionResult: {
+        status, stages: { uploaded }, _id: questionResultId
+      }
+    },
+  });
+});
+
 export {
   scheduleInterview,
   getTodayCandidateInterviews,
   getAllCandidateInterviews,
+  getCandidateInterviewById,
+  createInterviewQuestionResult,
 };
