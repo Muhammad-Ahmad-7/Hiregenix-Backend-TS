@@ -10,6 +10,7 @@ export interface IQuestionResult extends Document {
     transcriptText?: string;            // STT transcript of candidate's spoken answer
     videoUrl?: string;                  // URL to candidate's video for this question
     audioUrl?: string;                  // URL to extracted audio from video
+    videoAnalysis?: any;
     scores?: {
         content?: number;               // score on the answer content
         communication?: number;         // score on speech clarity, confidence
@@ -67,6 +68,10 @@ const QuestionResultSchema = new Schema<IQuestionResult>({
     },
     audioUrl: {
         type: String,
+        default: null
+    },
+    videoAnalysis: {
+        type: Object,
         default: null
     },
     scores: {

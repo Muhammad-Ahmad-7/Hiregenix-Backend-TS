@@ -233,6 +233,7 @@ const updateJobById = asyncHandler(async (req: Request, res: Response) => {
         salaryRange,
         requirements,
         status,
+        deadline
     } = req.body;
 
     // Check if job exists
@@ -254,28 +255,31 @@ const updateJobById = asyncHandler(async (req: Request, res: Response) => {
         salaryRange: salaryRange ?? job.salaryRange,
         requirements: requirements ?? job.requirements,
         status: status ?? job.status,
+        deadline: deadline ?? job.deadline,
         qdrantId: null,
     };
 
 
-    const result = await qdrantClient.delete(
-        "job",
-        {
-            points: [
-                job?.qdrantId as string
-            ],
-            wait: true,
-        },
-    )
+    if (job.qdrantId !== null) {
+        const result = await qdrantClient.delete(
+            "job",
+            {
+                points: [
+                    job?.qdrantId as string
+                ],
+                wait: true,
+            },
+        )
 
-    if (result.status !== "completed") {
-        console.log("Job deleted from mongodb but not from qdrant db.")
+        if (result.status !== "completed") {
+            console.log("Job deleted from mongodb but not from qdrant db.")
+        }
     }
-
 
     const updatedJob = await JobModel.findByIdAndUpdate(jobId, updatedFields, { new: true });
 
     if (!updatedJob) {
+        console.error("Error updating job:");
         return responseHelper(res, 500, "Failed", "Failed to update job.");
     }
 

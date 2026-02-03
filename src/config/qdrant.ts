@@ -6,6 +6,9 @@ export let client: QdrantClient | null = null;
 
 function connectToQdrant() {
     try {
+        if (client !== null) {
+            return client;
+        }
         client = new QdrantClient({
             url: config.qdrant.url,
             apiKey: config.qdrant.apiKey,

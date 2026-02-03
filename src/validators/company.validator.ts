@@ -104,4 +104,6 @@ export const updateJobSchema = z.object({
 
     requirements: z.optional(z.array(z.string().min(2).max(500))),
 
+    deadline: z.coerce.date()
+
 })
