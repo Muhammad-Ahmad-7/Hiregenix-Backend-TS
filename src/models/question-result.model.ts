@@ -7,6 +7,7 @@ export interface IQuestionResult extends Document {
     questionId: string;                 // question id from question bank
     questionText: string;               // Snapshot of question at the time of interview
     candidateAnswer?: string;           // If text input is allowed
+    numberOfTabSwitch: number;
     transcriptText?: string;            // STT transcript of candidate's spoken answer
     videoUrl?: string;                  // URL to candidate's video for this question
     audioUrl?: string;                  // URL to extracted audio from video
@@ -57,6 +58,10 @@ const QuestionResultSchema = new Schema<IQuestionResult>({
     candidateAnswer: {
         type: String,
         default: null
+    },
+    numberOfTabSwitch: {
+        type: Number,
+        default: 0
     },
     transcriptText: {
         type: String,

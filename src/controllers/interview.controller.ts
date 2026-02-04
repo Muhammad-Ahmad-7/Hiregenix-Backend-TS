@@ -213,11 +213,10 @@ const getCandidateInterviewById = asyncHandler(
 );
 
 const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Response) => {
-  const { interviewId, questionId, questionText, videoUrl } = req.body;
-
-
+  const { interviewId, questionId, questionText, videoUrl, numberOfTabSwitch } = req.body;
 
   if (!interviewId || !questionId || !questionText) {
+    console.log("missing")
     return responseHelper(res, 400, "Failed", "Missing required fields.");
   }
 
@@ -245,13 +244,18 @@ const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Res
     questionId,
     questionText,
     videoUrl,
+    numberOfTabSwitch,
     stages: {
       uploaded: true,
     }
   });
 
   if (!questionResult) {
-    return responseHelper(res, 500, "Failed", "Failed to create question result.");
+    return responseHelper(res, 500, "Failed", "Failed to create question result.", {
+      data: {
+        questionResult: null,
+      },
+    });
   }
 
   const { status, stages: { uploaded }, _id: questionResultId } = questionResult;
@@ -281,10 +285,70 @@ const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Res
   });
 });
 
+const createInterviewQuestionResultForSkipQuestions = asyncHandler(async (req: Request, res: Response) => {
+  const { interviewId, questionId, questionText, } = req.body;
+
+  if (!interviewId || !questionId || !questionText) {
+    console.log("missing")
+    return responseHelper(res, 400, "Failed", "Missing required fields.");
+  }
+
+  if (!isValidObjectId(interviewId)) {
+    return responseHelper(res, 400, "Failed", "Invalid interview ID.");
+  }
+
+  const interview = await InterviewModel.findById(interviewId);
+  if (!interview) {
+    return responseHelper(res, 404, "Failed", "Interview not found.");
+  }
+  const questionResultExists = await QuestionResultModel.findOne({
+    interviewId,
+    questionId,
+  });
+
+  if (questionResultExists) {
+    return responseHelper(res, 400, "Failed", "Question result already exists.");
+  }
+
+  // db call to create a new question result document
+  const questionResult = await QuestionResultModel.create({
+    interviewId,
+    questionId,
+    questionText,
+    status: "DONE",
+    stages: {
+      uploaded: true,
+      audioExtracted: true,
+      sttDone: true,
+      videoAnalyzed: true,
+      llmEvaluated: true,
+      done: true,
+      failed: false
+    }
+  });
+
+  if (!questionResult) {
+    return responseHelper(res, 500, "Failed", "Failed to create question result.", {
+      data: {
+        questionResult: null,
+      },
+    });
+  }
+
+  return responseHelper(res, 200, "Success", "Question result created successfully for skip question.", {
+    data: {
+      questionResult: {
+        status: questionResult.status, stages: questionResult.stages, _id: questionResult._id
+      }
+    },
+  });
+})
+
 export {
   scheduleInterview,
   getTodayCandidateInterviews,
   getAllCandidateInterviews,
   getCandidateInterviewById,
   createInterviewQuestionResult,
+  createInterviewQuestionResultForSkipQuestions
 };
