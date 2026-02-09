@@ -9,21 +9,17 @@ export interface IQuestionResult extends Document {
     candidateAnswer?: string;           // If text input is allowed
     numberOfTabSwitch: number;
     transcriptText?: string;            // STT transcript of candidate's spoken answer
-    videoUrl?: string;                  // URL to candidate's video for this question
-    audioUrl?: string;                  // URL to extracted audio from video
-    videoAnalysis?: any;
+    videoUrl: string;                  // URL to candidate's video for this question
+    audioUrl: string;                  // URL to extracted audio from video
+    videoAnalysis: any;
+    audioAnalysis: any;
     scores?: {
         content?: number;               // score on the answer content
         communication?: number;         // score on speech clarity, confidence
         skill?: number;                 // skill-specific score (mapped to question.skill)
         overall?: number;               // aggregate score
     };
-    lLMAnalysis?: {
-        confidenceScore?: number;       // 0-1 confidence of understanding answer
-        missingConcepts?: string[];     // extracted topics not covered
-        summary?: string;               // summary of answer
-        notes?: string;                 // additional evaluation notes
-    };
+    lLMAnalysis: any;
     status: 'PROCESSING' | 'DONE' | 'FAILED';   // Main status of processing
 
     // Per-stage boolean flags
@@ -32,10 +28,14 @@ export interface IQuestionResult extends Document {
         audioExtracted: boolean;   // audio extracted
         sttDone: boolean;          // transcription complete
         videoAnalyzed: boolean;    // video analysis complete
+        audioAnalyzed: boolean;    // audio analysis complete
         llmEvaluated: boolean;     // LLM evaluation complete
         done: boolean;             // all stages finished
         failed: boolean;           // any failure
     };
+    llmEnqueued: boolean;
+    llmStartedAt: Date;
+    llmFinishedAt: Date;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -79,6 +79,10 @@ const QuestionResultSchema = new Schema<IQuestionResult>({
         type: Object,
         default: null
     },
+    audioAnalysis: {
+        type: Object,
+        default: null
+    },
     scores: {
         content: {
             type: Number,
@@ -99,22 +103,8 @@ const QuestionResultSchema = new Schema<IQuestionResult>({
     },
 
     lLMAnalysis: {
-        confidenceScore: {
-            type: Number,
-            default: null
-        },
-        missingConcepts: {
-            type: [String],
-            default: null
-        },
-        summary: {
-            type: String,
-            default: null
-        },
-        notes: {
-            type: String,
-            default: null
-        }
+        type: Object,
+        default: null
     },
     status: {
         type: String,
@@ -138,6 +128,10 @@ const QuestionResultSchema = new Schema<IQuestionResult>({
             type: Boolean,
             default: false
         },
+        audioAnalyzed: {
+            type: Boolean,
+            default: false
+        },
         llmEvaluated: {
             type: Boolean,
             default: false
@@ -150,6 +144,18 @@ const QuestionResultSchema = new Schema<IQuestionResult>({
             type: Boolean,
             default: false
         }
+    },
+    llmEnqueued: {
+        type: Boolean,
+        default: false
+    },
+    llmStartedAt: {
+        type: Date,
+        default: null
+    },
+    llmFinishedAt: {
+        type: Date,
+        default: null
     }
 }, {
     timestamps: true

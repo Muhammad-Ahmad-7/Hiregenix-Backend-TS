@@ -247,6 +247,13 @@ const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Res
     numberOfTabSwitch,
     stages: {
       uploaded: true,
+      audioExtracted: false,
+      sttDone: false,
+      videoAnalyzed: false,
+      audioAnalyzed: false,
+      llmEvaluated: false,
+      done: false,
+      failed: false
     }
   });
 

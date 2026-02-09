@@ -20,6 +20,8 @@ export interface IInterview extends Document {
     | "cancelled"             // Cancelled manually by candidate/company
     | "expired";              // Job deadline crossed, and interview never scheduled or completed
     questions: string[];
+    totalQuestions: number;
+    completedQuestions: number;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -63,6 +65,7 @@ const InterviewSchema = new Schema<IInterview>(
         },
         questions: {
             type: [String],
+            // TODO: This one needs to be changed
             default: [
                 "Explain the difference between authentication and authorization in a web application.",
                 "Describe what happens from the moment a user types a URL into their browser until the page loads.",
@@ -77,8 +80,15 @@ const InterviewSchema = new Schema<IInterview>(
                 "What is a 'Rate Limiter' and why is it important for public-facing APIs?",
                 "Explain the concept of 'Graceful Degradation' in backend services."
             ],
-        }
-
+        },
+        totalQuestions: {
+            type: Number,
+            default: 10, // TODO: This one needs to be changed
+        },
+        completedQuestions: {
+            type: Number,
+            default: 0,
+        },
     },
     { timestamps: true }
 );
