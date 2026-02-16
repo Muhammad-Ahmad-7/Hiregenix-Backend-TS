@@ -112,6 +112,8 @@ const getTodayCandidateInterviews = asyncHandler(
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
+    console.log("user id", userId)
+
     const interviews = await InterviewModel.find({
       candidateId: userId,
       scheduledDate: { $gte: start, $lte: end },
