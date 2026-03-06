@@ -6,7 +6,7 @@ import { InterviewModel } from "../models/interview.model.js";
 import cloudinary from "../config/cloudinary.js";
 import fs from "fs";
 import QuestionResultModel from "../models/question-result.model.js";
-import { isValidObjectId } from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import { TaskModel } from "../models/task.model.js";
 import { SPEECH_TO_TEXT_QUEUE } from "../utils/constant.js";
 import { sendToQueue } from "../config/rabbitmq.js";
@@ -145,20 +145,97 @@ const getAllCandidateInterviews = asyncHandler(
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const status = req.query.status as string | undefined;
     const skip = (page - 1) * limit;
 
-    const interviews = await InterviewModel.find({ candidateId: userId })
-      .populate("jobId", "title workMode deadline")
-      .populate("companyId", "companyName")
-      .sort({ scheduledDate: -1 })
-      .skip(skip)
-      .limit(limit);
+    // const interviews = await InterviewModel.find({ candidateId: userId, ...(status ? { status } : {}) })
+    //   .populate("jobId", "title workMode deadline")
+    //   .populate("companyId", "companyName")
+    //   .sort({ scheduledDate: -1 })
+    //   .skip(skip)
+    //   .limit(limit);
+
+    const interviews = await InterviewModel.aggregate([
+      {
+        $match: {
+          candidateId: new mongoose.Types.ObjectId(userId),
+          ...(status ? { status } : {})
+        },
+      },
+      {
+        $lookup: {
+          from: "jobs",
+          localField: "jobId",
+          foreignField: "_id",
+          as: "job",
+        },
+      },
+      {
+        $unwind: "$job",
+      },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "companyId",
+          foreignField: "_id",
+          as: "company",
+        },
+      },
+      {
+        $lookup: {
+          from: "reports",
+          localField: "_id",
+          foreignField: "interviewId",
+          as: "report",
+        },
+      },
+      {
+        $unwind: {
+          path: "$report",
+          preserveNullAndEmptyArrays: true,
+        }
+      },
+      {
+        $unwind: "$company",
+      },
+      {
+        $sort: { scheduledDate: -1 },
+      },
+      {
+        $skip: skip,
+      },
+      {
+        $limit: limit,
+      },
+      {
+        $project: {
+          _id: 1,
+          candidateId: 1,
+          jobId: 1,
+          companyId: 1,
+          type: 1,
+          scheduledDate: 1,
+          status: 1,
+          "report._id": 1,
+          "report.topStrengths": 1,
+          "report.topWeaknesses": 1,
+          "report.overallImprovementSuggestions": 1,
+          "job.title": 1,
+          "job.workMode": 1,
+          "job.deadline": 1,
+          "company.companyName": 1,
+          "company.logoUrl": 1,
+        },
+      }
+    ])
+    console.log("INTERVIEWS", interviews)
     if (!interviews) {
       return responseHelper(res, 500, "Failed", "Failed to fetch interviews.");
     }
 
     const totalInterviews = await InterviewModel.countDocuments({
       candidateId: userId,
+      ...(status ? { status } : {})
     });
 
     return responseHelper(

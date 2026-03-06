@@ -49,24 +49,27 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 export interface IReport extends Document {
     _id: Types.ObjectId;
     interviewId: Types.ObjectId;
-    overallScore?: {
-        contentScore?: number;
-        communicationScore?: number;
-        fluencyScore?: number;
-        confidenceScore?: number;
-        overallScore?: number;
-    };
-    overallAnswerQuality?: string;
-    overallInterviewScore?: number;
+
+    contentScore: number;
+    communicationScore: number;
+    fluencyScore: number;
+    confidenceScore: number;
+    overallScore: number;
+
+    overallAnswerQuality: string;
+    overallInterviewScore: number;
+
     topStrengths?: string[];
     topWeaknesses?: string[];
     commonMissingConcepts?: string[];
     overallImprovementSuggestions?: string[];
-    integrity?: {
-        integrityConcern?: boolean;
-        integrityNotes?: string;
-    };
-    interviewSummary?: string;
+
+
+    integrityConcern: boolean;
+    integrityNotes: string;
+
+    interviewSummary: string;
+
     createdAt?: Date;
     updatedAt?: Date;
     pdfUrl?: string;
@@ -77,27 +80,25 @@ const ReportSchema = new Schema<IReport>({
         type: Schema.Types.ObjectId,
         ref: "Interview"
     },
+    contentScore: {
+        type: Number,
+        default: null
+    },
+    communicationScore: {
+        type: Number,
+        default: null
+    },
+    fluencyScore: {
+        type: Number,
+        default: null
+    },
+    confidenceScore: {
+        type: Number,
+        default: null
+    },
     overallScore: {
-        contentScore: {
-            type: Number,
-            default: null
-        },
-        communicationScore: {
-            type: Number,
-            default: null
-        },
-        fluencyScore: {
-            type: Number,
-            default: null
-        },
-        confidenceScore: {
-            type: Number,
-            default: null
-        },
-        overallScore: {
-            type: Number,
-            default: null
-        }
+        type: Number,
+        default: null
     },
     overallAnswerQuality: {
         type: String,
@@ -123,15 +124,13 @@ const ReportSchema = new Schema<IReport>({
         type: [String],
         default: []
     },
-    integrity: {
-        integrityConcern: {
-            type: Boolean,
-            default: false
-        },
-        integrityNotes: {
-            type: String,
-            default: null
-        }
+    integrityConcern: {
+        type: Boolean,
+        default: false
+    },
+    integrityNotes: {
+        type: String,
+        default: null
     },
     interviewSummary: {
         type: String,
