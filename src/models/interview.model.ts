@@ -20,6 +20,12 @@ export interface IInterview extends Document {
     | "cancelled"             // Cancelled manually by candidate/company
     | "expired";              // Job deadline crossed, and interview never scheduled or completed
     questions: string[];
+    totalQuestions: number;
+    completedQuestions: number;
+    livenessVideoUrl: string;
+    livenessCheckPassed: boolean;
+    faceCaptureImageUrl: string;
+    faceCaptureEmbeddings: number[];
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -63,22 +69,39 @@ const InterviewSchema = new Schema<IInterview>(
         },
         questions: {
             type: [String],
+            // TODO: This one needs to be changed
             default: [
-                "Explain the difference between authentication and authorization in a web application.",
-                "Describe what happens from the moment a user types a URL into their browser until the page loads.",
-                "What are the primary differences between a REST API and GraphQL?",
                 "Define 'Idempotency' in the context of HTTP methods and why it matters for API design.",
                 "What is a deadlock in a database, and how can a developer prevent one from occurring.",
                 "Explain the concept of 'Horizontal Scaling' versus 'Vertical Scaling' for a server.",
                 "What is the purpose of a Message Queue like RabbitMQ or Kafka in a distributed system?",
-                "Describe the role of an ORM and name one potential disadvantage of using it.",
-                "What are 'Indexes' in a database and how do they speed up read operations?",
-                "What is the difference between a 'Stateful' and a 'Stateless' service architecture?",
                 "What is a 'Rate Limiter' and why is it important for public-facing APIs?",
-                "Explain the concept of 'Graceful Degradation' in backend services."
             ],
-        }
-
+        },
+        totalQuestions: {
+            type: Number,
+            default: 5, // TODO: This one needs to be changed
+        },
+        completedQuestions: {
+            type: Number,
+            default: 0,
+        },
+        livenessVideoUrl: {
+            type: String,
+            default: null,
+        },
+        livenessCheckPassed: {
+            type: Boolean,
+            default: false,
+        },
+        faceCaptureImageUrl: {
+            type: String,
+            default: null,
+        },
+        faceCaptureEmbeddings: {
+            type: [Number],
+            default: null,
+        },
     },
     { timestamps: true }
 );

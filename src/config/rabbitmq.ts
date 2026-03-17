@@ -1,5 +1,5 @@
 import amqb from "amqplib";
-import { RESUME_QUEUE, SPEECH_TO_TEXT_QUEUE, CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, JOB_DESCRIPTION_EMBEDDINGS_QUEUE } from "../utils/constant.js";
+import { RESUME_QUEUE, SPEECH_TO_TEXT_QUEUE, CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, JOB_DESCRIPTION_EMBEDDINGS_QUEUE, LIVENESS_CHECK_QUEUE } from "../utils/constant.js";
 
 export let channel: amqb.Channel | null = null;
 
@@ -7,10 +7,16 @@ export default async function connectToRabbitMQ() {
     try {
         const connection = await amqb.connect(process.env.RABBITMQ_URL || "amqp://localhost");
         channel = await connection.createChannel();
+        const mainArgs = {
+            "x-dead-letter-exchange": "worker_failure_exchange",
+            "x-dead-letter-routing-key": "stt.failure"
+        }
+
         await channel.assertQueue(RESUME_QUEUE, { durable: true });
-        await channel.assertQueue(SPEECH_TO_TEXT_QUEUE, { durable: true });
+        await channel.assertQueue(SPEECH_TO_TEXT_QUEUE, { durable: true, arguments: mainArgs });
         await channel.assertQueue(CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, { durable: true });
         await channel.assertQueue(JOB_DESCRIPTION_EMBEDDINGS_QUEUE, { durable: true });
+        await channel.assertQueue(LIVENESS_CHECK_QUEUE, { durable: true });
         console.log("Connected to RabbitMQ");
         return channel;
     } catch (error) {
