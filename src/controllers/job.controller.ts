@@ -13,6 +13,8 @@ import CandidateModel from "../models/candidate.model.js";
 import { InterviewModel } from "../models/interview.model.js";
 import { SavedJobModel } from "../models/save_job.model.js";
 import mongoose from "mongoose";
+import { generateJobData } from "../services/jobDataCreation.service.js";
+
 
 
 const createJob = asyncHandler(async (req: Request, res: Response) => {
@@ -815,6 +817,24 @@ const getAllCompanyJobs = asyncHandler(async (req: Request, res: Response) => {
     });
 })
 
+const generateJobDataUsingAI = asyncHandler(async (req: Request, res: Response) => {
+    const { jobTitle } = req.params;
+    if (!jobTitle) {
+        return responseHelper(res, 400, "Failed", "Job title is required.");
+    }
+    const jobData = await generateJobData(jobTitle);
+
+    if (!jobData) {
+        return responseHelper(res, 500, "Failed", "Failed to generate job data.");
+    }
+
+    return responseHelper(res, 200, "Success", "Job data generated successfully.", {
+        data: {
+            jobData
+        }
+    });
+});
+
 
 export {
     createJob,
@@ -831,5 +851,6 @@ export {
     saveJobById,
     getSavedJobsOfCandidate,
     unSaveJobById,
-    getAllCompanyJobs
+    getAllCompanyJobs,
+    generateJobDataUsingAI
 }

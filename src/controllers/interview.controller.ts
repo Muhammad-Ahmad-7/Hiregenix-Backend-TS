@@ -8,7 +8,7 @@ import fs from "fs";
 import QuestionResultModel from "../models/question-result.model.js";
 import mongoose, { isValidObjectId } from "mongoose";
 import { TaskModel } from "../models/task.model.js";
-import { SPEECH_TO_TEXT_QUEUE } from "../utils/constant.js";
+import { LIVENESS_CHECK_QUEUE, SPEECH_TO_TEXT_QUEUE } from "../utils/constant.js";
 import { sendToQueue } from "../config/rabbitmq.js";
 
 const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
@@ -430,11 +430,50 @@ const createInterviewQuestionResultForSkipQuestions = asyncHandler(async (req: R
   });
 })
 
+const createLivenessCheck = asyncHandler(async (req: Request, res: Response) => {
+  const { interviewId, videoUrl } = req.body;
+  if (!interviewId) {
+    return responseHelper(res, 400, "Failed", "Missing interview ID.");
+  }
+  const interview = await InterviewModel.findById(interviewId);
+  if (!interview) {
+    return responseHelper(res, 404, "Failed", "Interview not found.");
+  }
+  const updatedInterview = await InterviewModel.findByIdAndUpdate(interviewId, {
+    livenessVideoUrl: videoUrl,
+  }, { new: true });
+
+  if (!updatedInterview) {
+    return responseHelper(res, 500, "Failed", "Failed to update interview with liveness check.");
+  }
+
+  const task = await TaskModel.create({
+    userId: req.userId,
+    type: "liveness_check",
+    payload: { interviewId: (updatedInterview._id).toString() },
+    status: "pending"
+  })
+
+  if (!task) {
+    console.log("ERROR :: Task not created for liveness check")
+    return;
+  }
+
+  sendToQueue(LIVENESS_CHECK_QUEUE, (task._id as string).toString());
+  return responseHelper(res, 200, "Success", "Liveness check processing started.", {
+    data: {
+      taskId: task._id,
+      interview: updatedInterview,
+    },
+  });
+});
+
 export {
   scheduleInterview,
   getTodayCandidateInterviews,
   getAllCandidateInterviews,
   getCandidateInterviewById,
   createInterviewQuestionResult,
-  createInterviewQuestionResultForSkipQuestions
+  createInterviewQuestionResultForSkipQuestions,
+  createLivenessCheck
 };

@@ -22,6 +22,10 @@ export interface IInterview extends Document {
     questions: string[];
     totalQuestions: number;
     completedQuestions: number;
+    livenessVideoUrl: string;
+    livenessCheckPassed: boolean;
+    faceCaptureImageUrl: string;
+    faceCaptureEmbeddings: number[];
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -81,6 +85,22 @@ const InterviewSchema = new Schema<IInterview>(
         completedQuestions: {
             type: Number,
             default: 0,
+        },
+        livenessVideoUrl: {
+            type: String,
+            default: null,
+        },
+        livenessCheckPassed: {
+            type: Boolean,
+            default: false,
+        },
+        faceCaptureImageUrl: {
+            type: String,
+            default: null,
+        },
+        faceCaptureEmbeddings: {
+            type: [Number],
+            default: null,
         },
     },
     { timestamps: true }

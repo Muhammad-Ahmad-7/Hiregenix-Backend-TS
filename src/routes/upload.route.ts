@@ -36,9 +36,19 @@ uploadRouter.post("/file", isLoggedIn, upload.single("file"), asyncHandler(
 // Cloudinary signed URL generation route
 uploadRouter.post("/generate-signed-url", isLoggedIn, asyncHandler(async (req: Request, res: Response) => {
     console.log("in signed url api");
-    const { interviewId, questionId } = req.body;
+    let interviewId: string | undefined;
+    let questionId: string | undefined;
+    if (req.body) {
+        interviewId = req.body.interviewId;
+        questionId = req.body.questionId;
+    }
     const timestamp = Math.round(new Date().getTime() / 1000);
-    const publicId = `interviews/${interviewId}/${questionId}`;
+    let publicId = "";
+    if (interviewId && questionId) {
+        publicId = `interviews/${interviewId}/${questionId}`;
+    } else {
+        publicId = `interviews/${timestamp}`;
+    }
     const paramsToSign = {
         public_id: publicId,
         timestamp,

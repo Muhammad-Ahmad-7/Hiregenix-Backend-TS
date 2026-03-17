@@ -36,11 +36,11 @@ export const companyProfileUpdateSchema = z.object({
 export const jobCreationSchema = z.object({
     title: z.string().min(2).max(100),
     role: z.string().min(2).max(100),
-    interviewGuideline: z.string().min(2).max(500),
+    interviewGuideline: z.string().min(2).max(2000),
 
     experienceLevel: z.enum(["entry", "mid", "senior"]),
 
-    description: z.string().min(2).max(500),
+    description: z.string().min(2),
 
     requiredSkills: z.array(z.string().min(1)),
 
@@ -59,7 +59,7 @@ export const jobCreationSchema = z.object({
         currency: z.string().min(2).max(10),
     }),
 
-    requirements: z.array(z.string().min(2).max(500)),
+    requirements: z.array(z.string().min(2)),
     deadline: z.coerce.date(),
 
 })
@@ -106,4 +106,8 @@ export const updateJobSchema = z.object({
 
     deadline: z.coerce.date()
 
+})
+
+export const generateJobDataSchema = z.object({
+    jobTitle: z.string().min(2).max(100),
 })
