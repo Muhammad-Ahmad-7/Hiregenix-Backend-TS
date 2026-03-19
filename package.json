@@ -51,6 +51,7 @@
     "@qdrant/js-client-rest": "^1.15.1",
     "@types/node": "^24.7.2",
     "amqplib": "^0.10.9",
+    "aws-sdk": "^2.1693.0",
     "axios": "^1.13.6",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.7.0",
