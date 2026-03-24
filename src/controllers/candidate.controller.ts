@@ -2,7 +2,10 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import responseHelper from "../utils/responseHelper.js";
 import { getChannel, sendToQueue } from "../config/rabbitmq.js";
-import { CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, RESUME_QUEUE } from "../utils/constant.js";
+import {
+  CANDIDATE_PROFILE_EMBEDDINGS_QUEUE,
+  RESUME_QUEUE,
+} from "../utils/constant.js";
 import cloudinary from "../config/cloudinary.js";
 
 import fs from "fs";
@@ -13,19 +16,39 @@ import { JobModel } from "../models/job.model.js";
 import ResumeModel from "../models/resume.model.js";
 import { InterviewModel } from "../models/interview.model.js";
 
+const completeCandidateProfile = asyncHandler(
+  async (req: Request, res: Response) => {
+    const {
+      fullName,
+      dateOfBirth,
+      gender,
+      country,
+      city,
+      contactNumber,
+      profilePictureUrl,
+      githubUrl,
+      linkedinUrl,
+      portfolioUrl,
+      skills,
+      bio,
+      tagline,
+    } = req.body;
 
-const completeCandidateProfile = asyncHandler(async (req: Request, res: Response) => {
-    const { fullName, dateOfBirth, gender, country, city, contactNumber, profilePictureUrl, githubUrl, linkedinUrl, portfolioUrl, skills, bio, tagline } = req.body;
-
-
-    const existingCandidate = await CandidateModel.findOne({ userId: req.user._id });
+    const existingCandidate = await CandidateModel.findOne({
+      userId: req.user._id,
+    });
 
     if (!existingCandidate) {
-        return responseHelper(res, 400, "Failed", "First Signup then create profile.");
+      return responseHelper(
+        res,
+        400,
+        "Failed",
+        "First Signup then create profile.",
+      );
     }
 
     if (existingCandidate.isProfileCompleted) {
-        return responseHelper(res, 400, "Failed", "Profile already completed.");
+      return responseHelper(res, 400, "Failed", "Profile already completed.");
     }
 
     // const existingCandidateWithPhone = await CandidateModel.findOne({ contactNumber });
@@ -34,262 +57,364 @@ const completeCandidateProfile = asyncHandler(async (req: Request, res: Response
     // }
 
     const updatedCandidate = await CandidateModel.findByIdAndUpdate(
-        existingCandidate._id,
-        {
-            fullName,
-            dateOfBirth,
-            gender,
-            country,
-            city,
-            contactNumber,
-            profilePictureUrl,
-            githubUrl,
-            linkedinUrl,
-            portfolioUrl,
-            skills,
-            bio,
-            tagline,
-            resumeId: null,
-            isProfileCompleted: true,
-        },
-        { new: true }
+      existingCandidate._id,
+      {
+        fullName,
+        dateOfBirth,
+        gender,
+        country,
+        city,
+        contactNumber,
+        profilePictureUrl,
+        githubUrl,
+        linkedinUrl,
+        portfolioUrl,
+        skills,
+        bio,
+        tagline,
+        resumeId: null,
+        isProfileCompleted: true,
+      },
+      { new: true },
     ).populate("userId", "email role");
 
-
     if (!updatedCandidate) {
-        return responseHelper(res, 500, "Failed", "Failed to update candidate profile.");
+      return responseHelper(
+        res,
+        500,
+        "Failed",
+        "Failed to update candidate profile.",
+      );
     }
 
-    const candidate = await CandidateModel.findById(updatedCandidate._id).populate("userId", "email role");
+    const candidate = await CandidateModel.findById(
+      updatedCandidate._id,
+    ).populate("userId", "email role");
 
     if (!candidate) {
-        return responseHelper(res, 500, "Failed", "Failed to fetch candidate profile.");
+      return responseHelper(
+        res,
+        500,
+        "Failed",
+        "Failed to fetch candidate profile.",
+      );
     }
 
-
     const task = await TaskModel.create({
-
-        userId: req.user._id,
-        type: "candidate_profile_embeddings",
-        payload: { candidateId: candidate._id.toString() },
-        status: "pending",
+      userId: req.user._id,
+      type: "candidate_profile_embeddings",
+      payload: { candidateId: candidate._id.toString() },
+      status: "pending",
     });
 
     if (!task) {
-        console.log("ERROR :: Task not created")
-        return;
+      console.log("ERROR :: Task not created");
+      return;
     }
 
     try {
-        sendToQueue(CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, (task._id as string).toString());
-        console.log("Message sent to RabbitMQ queue successfully");
+      sendToQueue(
+        CANDIDATE_PROFILE_EMBEDDINGS_QUEUE,
+        (task._id as string).toString(),
+      );
+      console.log("Message sent to RabbitMQ queue successfully");
     } catch (error) {
-        console.error("RabbitMQ error:", error);
+      console.error("RabbitMQ error:", error);
     }
 
-    return responseHelper(res, 200, "Success", "Candidate profile created successfully.", {
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Candidate profile created successfully.",
+      {
         data: {
-            candidate
-        }
-    });
-});
+          candidate,
+        },
+      },
+    );
+  },
+);
 
-const updateCandidateProfile = asyncHandler(async (req: Request, res: Response) => {
+const updateCandidateProfile = asyncHandler(
+  async (req: Request, res: Response) => {
     const candidateId = req.userId;
 
-    const existingCandidate = await CandidateModel.findById({ _id: candidateId });
+    const existingCandidate = await CandidateModel.findById({
+      _id: candidateId,
+    });
 
     if (!existingCandidate) {
-        return responseHelper(res, 404, "Failed", "Candidate not found.");
+      return responseHelper(res, 404, "Failed", "Candidate not found.");
     }
 
-    const { fullName, dateOfBirth, gender, country, city, contactNumber, profilePictureUrl, githubUrl, linkedinUrl, portfolioUrl, skills, bio, tagline } = req.body;
+    const {
+      fullName,
+      dateOfBirth,
+      gender,
+      country,
+      city,
+      contactNumber,
+      profilePictureUrl,
+      githubUrl,
+      linkedinUrl,
+      portfolioUrl,
+      skills,
+      bio,
+      tagline,
+    } = req.body;
 
     const updatedCandidate = await CandidateModel.findByIdAndUpdate(
-        existingCandidate._id,
-        {
-            fullName: fullName || existingCandidate.fullName,
-            dateOfBirth: dateOfBirth || existingCandidate.dateOfBirth,
-            gender: gender || existingCandidate.gender,
-            country: country || existingCandidate.country,
-            city: city || existingCandidate.city,
-            contactNumber: contactNumber || existingCandidate.contactNumber,
-            profilePictureUrl: profilePictureUrl || existingCandidate.profilePictureUrl,
-            githubUrl: githubUrl || existingCandidate.githubUrl,
-            linkedinUrl: linkedinUrl || existingCandidate.linkedinUrl,
-            portfolioUrl: portfolioUrl || existingCandidate.portfolioUrl,
-            skills: skills || existingCandidate.skills,
-            bio: bio || existingCandidate.bio,
-            tagline: tagline || existingCandidate.tagline,
-            resumeId: null,
-        },
-        { new: true }
+      existingCandidate._id,
+      {
+        fullName: fullName || existingCandidate.fullName,
+        dateOfBirth: dateOfBirth || existingCandidate.dateOfBirth,
+        gender: gender || existingCandidate.gender,
+        country: country || existingCandidate.country,
+        city: city || existingCandidate.city,
+        contactNumber: contactNumber || existingCandidate.contactNumber,
+        profilePictureUrl:
+          profilePictureUrl || existingCandidate.profilePictureUrl,
+        githubUrl: githubUrl || existingCandidate.githubUrl,
+        linkedinUrl: linkedinUrl || existingCandidate.linkedinUrl,
+        portfolioUrl: portfolioUrl || existingCandidate.portfolioUrl,
+        skills: skills || existingCandidate.skills,
+        bio: bio || existingCandidate.bio,
+        tagline: tagline || existingCandidate.tagline,
+        resumeId: null,
+      },
+      { new: true },
     ).populate("userId", "email role");
 
-
     if (!updatedCandidate) {
-        return responseHelper(res, 500, "Failed", "Failed to update candidate profile.");
+      return responseHelper(
+        res,
+        500,
+        "Failed",
+        "Failed to update candidate profile.",
+      );
     }
 
     const task = await TaskModel.create({
-
-        userId: req.user._id,
-        type: "candidate_profile_embeddings",
-        payload: { candidateId: updatedCandidate._id.toString() },
-        status: "pending",
+      userId: req.user._id,
+      type: "candidate_profile_embeddings",
+      payload: { candidateId: updatedCandidate._id.toString() },
+      status: "pending",
     });
 
     if (!task) {
-        console.log("ERROR :: Task not created")
-        return;
+      console.log("ERROR :: Task not created");
+      return;
     }
 
-    sendToQueue(CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, (task._id as string).toString());
+    sendToQueue(
+      CANDIDATE_PROFILE_EMBEDDINGS_QUEUE,
+      (task._id as string).toString(),
+    );
 
-    return responseHelper(res, 200, "Success", "Candidate profile updated successfully.", {
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Candidate profile updated successfully.",
+      {
         data: {
-            candidate: updatedCandidate
-        }
-    });
-});
+          candidate: updatedCandidate,
+        },
+      },
+    );
+  },
+);
 
-
-const getCandidateProfile = asyncHandler(async (req: Request, res: Response) => {
+const getCandidateProfile = asyncHandler(
+  async (req: Request, res: Response) => {
     const userId = req.userId;
-
+    console.log("userID---", userId);
     if (!userId) {
-        return responseHelper(res, 400, "Failed", "User ID is required.");
+      return responseHelper(res, 400, "Failed", "User ID is required.");
     }
 
-    const candidate = await CandidateModel.findById({ _id: userId }).populate("userId", "email role");
+    const candidate = await CandidateModel.findById({ _id: userId }).populate(
+      "userId",
+      "email role",
+    );
     if (!candidate) {
-        return responseHelper(res, 404, "Failed", "Candidate not found.");
+      return responseHelper(res, 404, "Failed", "Candidate not found.");
     }
 
-    return responseHelper(res, 200, "Success", "Candidate profile fetched successfully.", {
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Candidate profile fetched successfully.",
+      {
         data: {
-            candidate
-        }
-    });
-});
+          candidate,
+        },
+      },
+    );
+  },
+);
 
-const getCandidateProfileById = asyncHandler(async (req: Request, res: Response) => {
+const getCandidateProfileById = asyncHandler(
+  async (req: Request, res: Response) => {
     const { userId } = req.params;
 
     if (!userId) {
-        return responseHelper(res, 400, "Failed", "User ID is required.");
+      return responseHelper(res, 400, "Failed", "User ID is required.");
     }
 
-    const candidate = await CandidateModel.findOne({ userId }).populate("userId", "email role");
+    const candidate = await CandidateModel.findOne({ userId }).populate(
+      "userId",
+      "email role",
+    );
     if (!candidate) {
-        return responseHelper(res, 404, "Failed", "Candidate not found.");
+      return responseHelper(res, 404, "Failed", "Candidate not found.");
     }
 
-    return responseHelper(res, 200, "Success", "Candidate profile fetched successfully.", {
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Candidate profile fetched successfully.",
+      {
         data: {
-            candidate
-        }
-    });
-});
-
+          candidate,
+        },
+      },
+    );
+  },
+);
 
 const getCandidateById = asyncHandler(async (req: Request, res: Response) => {
-    const { userId } = req.params;
+  const { userId } = req.params;
 
-    if (!userId) {
-        return responseHelper(res, 400, "Failed", "User ID is required.");
-    }
+  if (!userId) {
+    return responseHelper(res, 400, "Failed", "User ID is required.");
+  }
 
-    const candidate = await CandidateModel.findOne({ userId }).populate("userId", "email role");
-    if (!candidate) {
-        return responseHelper(res, 404, "Failed", "Candidate not found.");
-    }
-    return responseHelper(res, 200, "Success", "Candidate fetched successfully.", {
-        data: {
-            candidate
-        }
-    });
+  const candidate = await CandidateModel.findOne({ userId }).populate(
+    "userId",
+    "email role",
+  );
+  if (!candidate) {
+    return responseHelper(res, 404, "Failed", "Candidate not found.");
+  }
+  return responseHelper(
+    res,
+    200,
+    "Success",
+    "Candidate fetched successfully.",
+    {
+      data: {
+        candidate,
+      },
+    },
+  );
 });
 
 const resumeParser = asyncHandler(async (req: Request, res: Response) => {
-    console.log("Received resume parse request:", req.body);
-    const file = req.file;
-    if (!file) {
-        return responseHelper(res, 400, "Failed", "No file uploaded.");
-    }
-    // upload to cloudinary
-    const result = await cloudinary.uploader.upload(file.path, {
-        resource_type: "auto", // handles images, pdfs, docx, audio, video
-    });
+  console.log("Received resume parse request:", req.body);
+  const file = req.file;
+  if (!file) {
+    return responseHelper(res, 400, "Failed", "No file uploaded.");
+  }
+  // upload to cloudinary
+  const result = await cloudinary.uploader.upload(file.path, {
+    resource_type: "auto", // handles images, pdfs, docx, audio, video
+  });
 
-    // delete local file
-    fs.unlinkSync(file.path);
+  // delete local file
+  fs.unlinkSync(file.path);
 
+  console.log("File uploaded to Cloudinary:", result);
 
-    console.log("File uploaded to Cloudinary:", result);
+  const resumeUrl = result.secure_url;
 
-    const resumeUrl = result.secure_url;
+  const candidate = await CandidateModel.findOne({ userId: req.user._id });
+  if (!candidate) {
+    return responseHelper(res, 404, "Failed", "Candidate not found.");
+  }
 
-    const candidate = await CandidateModel.findOne({ userId: req.user._id });
-    if (!candidate) {
-        return responseHelper(res, 404, "Failed", "Candidate not found.");
-    }
+  const task = await TaskModel.create({
+    userId: candidate._id,
+    type: "resume_parsing",
+    payload: { resume: resumeUrl },
+    status: "pending",
+  });
 
-    const task = await TaskModel.create({
-        userId: candidate._id,
-        type: "resume_parsing",
-        payload: { resume: resumeUrl },
-        status: "pending",
-    });
+  try {
+    // Use the safe getChannel function
+    sendToQueue(RESUME_QUEUE, (task._id as string).toString());
+    console.log("Message sent to RabbitMQ queue successfully");
+  } catch (error) {
+    console.error("RabbitMQ error:", error);
+    return responseHelper(
+      res,
+      500,
+      "Failed",
+      "Failed to queue resume for processing.",
+    );
+  }
 
-
-
-    try {
-        // Use the safe getChannel function
-        sendToQueue(RESUME_QUEUE, (task._id as string).toString());
-        console.log("Message sent to RabbitMQ queue successfully");
-    } catch (error) {
-        console.error("RabbitMQ error:", error);
-        return responseHelper(res, 500, "Failed", "Failed to queue resume for processing.");
-    }
-
-    return responseHelper(res, 200, "Success", "Resume uploaded and queued for processing.", {
-        data: {
-            taskId: task._id
-        }
-    });
+  return responseHelper(
+    res,
+    200,
+    "Success",
+    "Resume uploaded and queued for processing.",
+    {
+      data: {
+        taskId: task._id,
+      },
+    },
+  );
 });
 
-const getResumeParsedData = asyncHandler(async (req: Request, res: Response) => {
-
+const getResumeParsedData = asyncHandler(
+  async (req: Request, res: Response) => {
     const candidate = await CandidateModel.findOne({ userId: req.user._id });
 
     if (!candidate) {
-        return responseHelper(res, 404, "Failed", "Candidate not found.");
+      return responseHelper(res, 404, "Failed", "Candidate not found.");
     }
 
     const resume = await ResumeModel.findOne({ candidateId: candidate._id });
 
     if (!resume) {
-        return responseHelper(res, 404, "Failed", "Resume not found.");
+      return responseHelper(res, 404, "Failed", "Resume not found.");
     }
 
-    return responseHelper(res, 200, "Success", "Parsed resume data fetched successfully.", {
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Parsed resume data fetched successfully.",
+      {
         data: {
-            resume
-        }
-    });
-});
+          resume,
+        },
+      },
+    );
+  },
+);
 
-
-const getCandidateDashboardStats = asyncHandler(async (req: Request, res: Response) => {
+const getCandidateDashboardStats = asyncHandler(
+  async (req: Request, res: Response) => {
     const userId = req.userId;
 
-    const userAppliedJobsCount = await InterviewModel.countDocuments({ candidateId: userId });
-    const userActiveJobsCount = await InterviewModel.countDocuments({ candidateId: userId, status: "scheduled" });
+    const userAppliedJobsCount = await InterviewModel.countDocuments({
+      candidateId: userId,
+    });
+    const userActiveJobsCount = await InterviewModel.countDocuments({
+      candidateId: userId,
+      status: "scheduled",
+    });
     const resumeData = await ResumeModel.findOne({ candidateId: userId });
 
-    const recentAppliedJobs = await InterviewModel.find({ candidateId: userId }).sort({ createdAt: -1 }).limit(5).populate("jobId");
+    const recentAppliedJobs = await InterviewModel.find({ candidateId: userId })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate("jobId");
 
     const start = new Date();
     start.setHours(0, 0, 0, 0);
@@ -298,29 +423,39 @@ const getCandidateDashboardStats = asyncHandler(async (req: Request, res: Respon
     end.setHours(23, 59, 59, 999);
 
     const interviews = await InterviewModel.find({
-        candidateId: userId,
-        scheduledDate: { $gte: start, $lte: end },
+      candidateId: userId,
+      scheduledDate: { $gte: start, $lte: end },
     })
-        .populate("jobId")
-        .populate("companyId")
-        .sort({ scheduledDate: -1 });
+      .populate("jobId")
+      .populate("companyId")
+      .sort({ scheduledDate: -1 });
 
-
-    return responseHelper(res, 200, "Success", "Dashboard stats fetched successfully.", {
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Dashboard stats fetched successfully.",
+      {
         data: {
-            userAppliedJobsCount: userAppliedJobsCount || 0,
-            resumeScore: resumeData?.aiScore || 0,
-            userActiveJobsCount: userActiveJobsCount || 0,
-            matchedJobsCounts: 10,
-            recentAppliedJobs: recentAppliedJobs || [],
-            getTodaysInterview: interviews || []
-        }
-    });
+          userAppliedJobsCount: userAppliedJobsCount || 0,
+          resumeScore: resumeData?.aiScore || 0,
+          userActiveJobsCount: userActiveJobsCount || 0,
+          matchedJobsCounts: 10,
+          recentAppliedJobs: recentAppliedJobs || [],
+          getTodaysInterview: interviews || [],
+        },
+      },
+    );
+  },
+);
 
-})
-
-
-
-
-
-export { resumeParser, completeCandidateProfile, updateCandidateProfile, getCandidateProfile, getCandidateById, getResumeParsedData, getCandidateProfileById, getCandidateDashboardStats };
+export {
+  resumeParser,
+  completeCandidateProfile,
+  updateCandidateProfile,
+  getCandidateProfile,
+  getCandidateById,
+  getResumeParsedData,
+  getCandidateProfileById,
+  getCandidateDashboardStats,
+};
