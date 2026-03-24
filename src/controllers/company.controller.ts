@@ -10,7 +10,8 @@ import { JOB_DESCRIPTION_EMBEDDINGS_QUEUE } from "../utils/constant.js";
 import { qdrantClient } from "../server.js";
 import { InterviewModel } from "../models/interview.model.js";
 
-const completeCompanyProfile = asyncHandler(async (req: Request, res: Response) => {
+const completeCompanyProfile = asyncHandler(
+  async (req: Request, res: Response) => {
     // take out all the input data from the req.body
     // find the matching document in the CompanyModel using the user._id
     // then update this document with the user provided information
@@ -20,104 +21,31 @@ const completeCompanyProfile = asyncHandler(async (req: Request, res: Response) 
     const existingCompany = await CompanyModel.findOne({ userId: companyId });
 
     if (!existingCompany) {
-        return responseHelper(res, 400, "Failed", "First Signup then create profile.");
-    }
-
-    const { companyName, city, contactEmail, country, description, foundedYear, linkedInUrl, logoUrl, ntnNumber, techStack, website }: ICompanyProfile = req.body;
-
-    const updatedCompany = await CompanyModel.findByIdAndUpdate(
-        existingCompany._id,
-        {
-            companyName,
-            city,
-            contactEmail,
-            country,
-            description,
-            foundedYear,
-            linkedInUrl,
-            logoUrl,
-            ntnNumber,
-            techStack,
-            website,
-            isProfileCompleted: true,
-        },
-        { new: true }
-    );
-
-
-    if (!updatedCompany) {
-        return responseHelper(res, 500, "Failed", "Failed to update company profile. Please try again later.");
-    }
-
-    const company = await CompanyModel.findById(updatedCompany._id).populate("userId", "email role");
-
-    return responseHelper(res, 200, "Success", "Company profile created successfully.", {
-        data: {
-            company
-        }
-    });
-})
-
-const getDashboardStats = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.user._id;
-    if (!userId) {
-        return responseHelper(res, 400, "Failed", "User not found.");
-    }
-
-    const findCompany = await CompanyModel.findOne({ userId });
-
-    if (!findCompany) {
-        return responseHelper(res, 404, "Failed", "Company not found.");
-    }
-
-    const companyId = findCompany._id;
-
-    const postedJobsCount = await JobModel.countDocuments({ companyId, isDeleted: false });
-    const activeJobsCount = await JobModel.countDocuments({ companyId, status: "open", isDeleted: false });
-    const closedJobsCount = await JobModel.countDocuments({ companyId, status: "closed", isDeleted: false });
-    const appliedJobsCount = await InterviewModel.countDocuments({ companyId });
-
-    const activeJobs = await JobModel.find({ companyId, status: "open", isDeleted: false }).limit(5).sort({ createdAt: -1 });
-    const recentApplications = await InterviewModel.find({ companyId }).sort({ createdAt: -1 }).limit(5).populate("candidateId").populate("jobId");
-
-    return responseHelper(res, 200, "Success", "Company stats fetched successfully.", {
-        data: {
-            postedJobsCount,
-            activeJobsCount,
-            appliedJobsCount,
-            closedJobsCount,
-            activeJobs,
-            recentApplications: recentApplications || []
-        }
-    });
-
-});
-
-const getCompanyProfile = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.userId;
-
-    const company = await CompanyModel.findById({ _id: userId }).populate("userId", "email role");
-    if (!company) {
-        return responseHelper(res, 404, "Failed", "Company not found.");
-    }
-
-    return responseHelper(res, 200, "Success", "Company profile fetched successfully.", {
-        data: {
-            company
-        }
-    });
-});
-
-const updatedCompanyProfile = asyncHandler(async (req: Request, res: Response) => {
-    const userId = req.userId;
-
-    const existingCompany = await CompanyModel.findById({ _id: userId });
-
-    if (!existingCompany) {
-        return responseHelper(res, 400, "Failed", "Company profile does not exist.");
+      return responseHelper(
+        res,
+        400,
+        "Failed",
+        "First Signup then create profile.",
+      );
     }
 
     const {
+      companyName,
+      city,
+      contactEmail,
+      country,
+      description,
+      foundedYear,
+      linkedInUrl,
+      logoUrl,
+      ntnNumber,
+      techStack,
+      website,
+    }: ICompanyProfile = req.body;
+
+    const updatedCompany = await CompanyModel.findByIdAndUpdate(
+      existingCompany._id,
+      {
         companyName,
         city,
         contactEmail,
@@ -128,46 +56,215 @@ const updatedCompanyProfile = asyncHandler(async (req: Request, res: Response) =
         logoUrl,
         ntnNumber,
         techStack,
-        website
+        website,
+        isProfileCompleted: true,
+      },
+      { new: true },
+    );
+
+    if (!updatedCompany) {
+      return responseHelper(
+        res,
+        500,
+        "Failed",
+        "Failed to update company profile. Please try again later.",
+      );
+    }
+
+    const company = await CompanyModel.findById(updatedCompany._id).populate(
+      "userId",
+      "email role",
+    );
+
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Company profile created successfully.",
+      {
+        data: {
+          company,
+        },
+      },
+    );
+  },
+);
+
+const getDashboardStats = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user._id;
+  if (!userId) {
+    return responseHelper(res, 400, "Failed", "User not found.");
+  }
+
+  const findCompany = await CompanyModel.findOne({ userId });
+
+  if (!findCompany) {
+    return responseHelper(res, 404, "Failed", "Company not found.");
+  }
+
+  const companyId = findCompany._id;
+
+  const postedJobsCount = await JobModel.countDocuments({
+    companyId,
+    isDeleted: false,
+  });
+  const activeJobsCount = await JobModel.countDocuments({
+    companyId,
+    status: "open",
+    isDeleted: false,
+  });
+  const closedJobsCount = await JobModel.countDocuments({
+    companyId,
+    status: "closed",
+    isDeleted: false,
+  });
+  const appliedJobsCount = await InterviewModel.countDocuments({ companyId });
+
+  const activeJobs = await JobModel.find({
+    companyId,
+    status: "open",
+    isDeleted: false,
+  })
+    .limit(5)
+    .sort({ createdAt: -1 });
+  const recentApplications = await InterviewModel.find({ companyId })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .populate("candidateId")
+    .populate("jobId");
+
+  return responseHelper(
+    res,
+    200,
+    "Success",
+    "Company stats fetched successfully.",
+    {
+      data: {
+        postedJobsCount,
+        activeJobsCount,
+        appliedJobsCount,
+        closedJobsCount,
+        activeJobs,
+        recentApplications: recentApplications || [],
+      },
+    },
+  );
+});
+
+const getCompanyProfile = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.userId;
+
+  const company = await CompanyModel.findById({ _id: userId }).populate(
+    "userId",
+    "email role",
+  );
+  if (!company) {
+    return responseHelper(res, 404, "Failed", "Company not found.");
+  }
+
+  return responseHelper(
+    res,
+    200,
+    "Success",
+    "Company profile fetched successfully.",
+    {
+      data: {
+        company,
+      },
+    },
+  );
+});
+
+const updatedCompanyProfile = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.userId;
+
+    const existingCompany = await CompanyModel.findById({ _id: userId });
+
+    if (!existingCompany) {
+      return responseHelper(
+        res,
+        400,
+        "Failed",
+        "Company profile does not exist.",
+      );
+    }
+
+    const {
+      companyName,
+      city,
+      contactEmail,
+      country,
+      description,
+      foundedYear,
+      linkedInUrl,
+      logoUrl,
+      ntnNumber,
+      techStack,
+      website,
     } = req.body;
 
     if (companyName) {
-        const findCompanyByName = await CompanyModel.findOne({ companyName });
-        if (findCompanyByName) {
-            return responseHelper(res, 400, "Failed", "Company with the same already exist.");
-        }
+      const findCompanyByName = await CompanyModel.findOne({ companyName });
+      if (findCompanyByName) {
+        return responseHelper(
+          res,
+          400,
+          "Failed",
+          "Company with the same already exist.",
+        );
+      }
     }
 
     const updatedCompany = await CompanyModel.findByIdAndUpdate(
-        existingCompany._id,
-        {
-            companyName: companyName || existingCompany.companyName,
-            city: city || existingCompany.city,
-            contactEmail: contactEmail || existingCompany.contactEmail,
-            country: country || existingCompany.country,
-            description: description || existingCompany.description,
-            foundedYear: foundedYear || existingCompany.foundedYear,
-            linkedInUrl: linkedInUrl || existingCompany.linkedInUrl,
-            logoUrl: logoUrl || existingCompany.logoUrl,
-            ntnNumber: ntnNumber || existingCompany.ntnNumber,
-            techStack: techStack || existingCompany.techStack,
-            website: website || existingCompany.website,
-        },
-        { new: true }
+      existingCompany._id,
+      {
+        companyName: companyName || existingCompany.companyName,
+        city: city || existingCompany.city,
+        contactEmail: contactEmail || existingCompany.contactEmail,
+        country: country || existingCompany.country,
+        description: description || existingCompany.description,
+        foundedYear: foundedYear || existingCompany.foundedYear,
+        linkedInUrl: linkedInUrl || existingCompany.linkedInUrl,
+        logoUrl: logoUrl || existingCompany.logoUrl,
+        ntnNumber: ntnNumber || existingCompany.ntnNumber,
+        techStack: techStack || existingCompany.techStack,
+        website: website || existingCompany.website,
+      },
+      { new: true },
     );
 
-
     if (!updatedCompany) {
-        return responseHelper(res, 500, "Failed", "Failed to update company profile. Please try again later.");
+      return responseHelper(
+        res,
+        500,
+        "Failed",
+        "Failed to update company profile. Please try again later.",
+      );
     }
 
-    const company = await CompanyModel.findById(updatedCompany._id).populate("userId", "email role");
+    const company = await CompanyModel.findById(updatedCompany._id).populate(
+      "userId",
+      "email role",
+    );
 
-    return responseHelper(res, 200, "Success", "Company profile updated successfully.", {
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Company profile updated successfully.",
+      {
         data: {
-            company
-        }
-    });
-});
+          company,
+        },
+      },
+    );
+  },
+);
 
-export { completeCompanyProfile, getDashboardStats, getCompanyProfile, updatedCompanyProfile }
+export {
+  completeCompanyProfile,
+  getDashboardStats,
+  getCompanyProfile,
+  updatedCompanyProfile,
+};
