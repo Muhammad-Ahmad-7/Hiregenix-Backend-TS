@@ -41,6 +41,11 @@ interface Config {
         url: string;
         apiKey: string;
     };
+    aws: {
+        accessKeyId: string;
+        secretAccessKey: string;
+        region: string;
+    }
 }
 
 export const config: Config = {
@@ -75,4 +80,9 @@ export const config: Config = {
         url: process.env.QDRANT_URL || 'https://localhost:6333',
         apiKey: process.env.QDRANT_API_KEY || '',
     },
+    aws: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+        region: process.env.AWS_REGION || '',
+    }
 };

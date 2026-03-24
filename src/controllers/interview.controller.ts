@@ -10,6 +10,8 @@ import mongoose, { isValidObjectId } from "mongoose";
 import { TaskModel } from "../models/task.model.js";
 import { LIVENESS_CHECK_QUEUE, SPEECH_TO_TEXT_QUEUE } from "../utils/constant.js";
 import { sendToQueue } from "../config/rabbitmq.js";
+import CandidateModel from "../models/candidate.model.js";
+import compareFaces from "../services/faceVerification.service.js";
 
 const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   // Implementation for scheduling interview
@@ -468,6 +470,42 @@ const createLivenessCheck = asyncHandler(async (req: Request, res: Response) => 
   });
 });
 
+const checkFaceVerification = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.userId;
+
+  const candidate = await CandidateModel.findById(userId);
+
+  if (!candidate) {
+    return responseHelper(res, 404, "Failed", "Candidate not found.");
+  }
+
+  if (!req.file) {
+    return responseHelper(res, 400, "Failed", "No file uploaded.");
+  }
+
+  const liveImage = req.file.buffer;
+
+  if (!candidate.profilePictureUrl) {
+    return responseHelper(res, 400, "Failed", "No reference image found for candidate.");
+  }
+
+  const referenceImageUrl = candidate.profilePictureUrl;
+
+  const result = await compareFaces(referenceImageUrl, liveImage);
+  // console.log(result);
+
+  const verificationData = {
+    similarity: result.FaceMatches && result.FaceMatches.length > 0 ? result.FaceMatches[0]?.Similarity : 0,
+  }
+
+  return responseHelper(res, 200, "Success", "Face verification completed.", {
+    data: {
+      verificationResult: verificationData,
+    }
+  });
+
+});
+
 export {
   scheduleInterview,
   getTodayCandidateInterviews,
@@ -475,5 +513,6 @@ export {
   getCandidateInterviewById,
   createInterviewQuestionResult,
   createInterviewQuestionResultForSkipQuestions,
-  createLivenessCheck
+  createLivenessCheck,
+  checkFaceVerification
 };
