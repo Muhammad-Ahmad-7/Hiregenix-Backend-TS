@@ -5,6 +5,7 @@ export interface ITask extends Document {
     type: "resume_parsing" | "profile_enhancement" | "resume_feedback" | "interview_prep";
     payload: Record<string, any>;  // flexible
     status: "pending" | "processing" | "completed" | "failed";
+    retryCount: number;
     result?: Record<string, any>;
     error?: string | null;
     createdAt?: Date;
@@ -17,10 +18,11 @@ const TaskSchema = new Schema<ITask>(
         type: {
             type: String,
             enum: ["resume_parsing", "profile_enhancement", "resume_feedback", "interview_prep", "candidate_profile_embeddings", "job_description_embeddings", "job_recommendation", "speech_to_text",
-                "audio_analysis", "video_analysis", "llm_evaluation"],
+                "audio_analysis", "video_analysis", "llm_evaluation", "liveness_check", "face_capture"],
             required: true,
         },
         payload: { type: Schema.Types.Mixed, required: true }, // flexible JSON
+        retryCount: { type: Number, default: 0 },
         status: {
             type: String,
             enum: ["pending", "processing", "completed", "failed"],

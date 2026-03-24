@@ -13,6 +13,8 @@ import CandidateModel from "../models/candidate.model.js";
 import { InterviewModel } from "../models/interview.model.js";
 import { SavedJobModel } from "../models/save_job.model.js";
 import mongoose from "mongoose";
+import { generateJobData } from "../services/jobDataCreation.service.js";
+
 
 
 const createJob = asyncHandler(async (req: Request, res: Response) => {
@@ -233,6 +235,7 @@ const updateJobById = asyncHandler(async (req: Request, res: Response) => {
         salaryRange,
         requirements,
         status,
+        deadline
     } = req.body;
 
     // Check if job exists
@@ -254,28 +257,31 @@ const updateJobById = asyncHandler(async (req: Request, res: Response) => {
         salaryRange: salaryRange ?? job.salaryRange,
         requirements: requirements ?? job.requirements,
         status: status ?? job.status,
+        deadline: deadline ?? job.deadline,
         qdrantId: null,
     };
 
 
-    const result = await qdrantClient.delete(
-        "job",
-        {
-            points: [
-                job?.qdrantId as string
-            ],
-            wait: true,
-        },
-    )
+    if (job.qdrantId !== null) {
+        const result = await qdrantClient.delete(
+            "job",
+            {
+                points: [
+                    job?.qdrantId as string
+                ],
+                wait: true,
+            },
+        )
 
-    if (result.status !== "completed") {
-        console.log("Job deleted from mongodb but not from qdrant db.")
+        if (result.status !== "completed") {
+            console.log("Job deleted from mongodb but not from qdrant db.")
+        }
     }
-
 
     const updatedJob = await JobModel.findByIdAndUpdate(jobId, updatedFields, { new: true });
 
     if (!updatedJob) {
+        console.error("Error updating job:");
         return responseHelper(res, 500, "Failed", "Failed to update job.");
     }
 
@@ -581,7 +587,63 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const interviews = await InterviewModel.find({ jobId, companyId: userId }).populate("candidateId", "fullName countryName profilePictureUrl").sort({ scheduledDate: -1 }).skip(skip).limit(limit);
+    // const interviews = await InterviewModel.find({ jobId, companyId: userId }).populate("candidateId", "fullName countryName profilePictureUrl").sort({ scheduledDate: -1 }).skip(skip).limit(limit);
+
+
+    const interviews = await InterviewModel.aggregate([
+        {
+            $match: {
+                jobId: new mongoose.Types.ObjectId(jobId),
+                companyId: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $lookup: {
+                from: "candidates",
+                localField: "candidateId",
+                foreignField: "_id",
+                as: "candidate"
+            }
+        },
+        {
+            $unwind: {
+                path: "$candidate",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $lookup: {
+                from: "reports",
+                localField: "_id",
+                foreignField: "interviewId",
+                as: "report"
+            }
+        },
+        {
+            $unwind: {
+                path: "$report",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $project: {
+                type: 1,
+                scheduledDate: 1,
+                status: 1,
+                report: 1,
+                "candidate.fullName": 1,
+                "candidate.countryName": 1,
+                "candidate.profilePictureUrl": 1
+            }
+        },
+        { $sort: { scheduledDate: -1 } },
+        { $skip: skip },
+        { $limit: limit }
+    ]);
+
+    console.log("Interviews", interviews);
+
+
     if (!interviews) {
         return responseHelper(res, 500, "Failed", "Failed to fetch interview applications.");
     }
@@ -704,7 +766,38 @@ const getAllCompanyJobs = asyncHandler(async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const jobs = await JobModel.find({ companyId: companyId, status: "open" }).skip(skip).limit(limit).sort({ createdAt: -1 });
+    // const jobs = await JobModel.find({ companyId: companyId, status: "open" }).skip(skip).limit(limit).sort({ createdAt: -1 });
+
+    const jobs = await JobModel.aggregate([
+        {
+            $match: {
+                companyId: new mongoose.Types.ObjectId(companyId),
+                status: "open",
+                isDeleted: false
+            }
+        },
+        {
+            $lookup: {
+                from: "interviews",
+                localField: "_id",
+                foreignField: "jobId",
+                as: "interviews"
+            }
+        },
+        {
+            $addFields: {
+                totalInterviews: { $size: "$interviews" }
+            }
+        },
+        {
+            $project: {
+                interviews: 0
+            }
+        },
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit }
+    ]);
 
     if (!jobs) {
         return responseHelper(res, 500, "Failed", "Failed to fetch applied jobs.");
@@ -724,6 +817,24 @@ const getAllCompanyJobs = asyncHandler(async (req: Request, res: Response) => {
     });
 })
 
+const generateJobDataUsingAI = asyncHandler(async (req: Request, res: Response) => {
+    const { jobTitle } = req.params;
+    if (!jobTitle) {
+        return responseHelper(res, 400, "Failed", "Job title is required.");
+    }
+    const jobData = await generateJobData(jobTitle);
+
+    if (!jobData) {
+        return responseHelper(res, 500, "Failed", "Failed to generate job data.");
+    }
+
+    return responseHelper(res, 200, "Success", "Job data generated successfully.", {
+        data: {
+            jobData
+        }
+    });
+});
+
 
 export {
     createJob,
@@ -740,5 +851,6 @@ export {
     saveJobById,
     getSavedJobsOfCandidate,
     unSaveJobById,
-    getAllCompanyJobs
+    getAllCompanyJobs,
+    generateJobDataUsingAI
 }
