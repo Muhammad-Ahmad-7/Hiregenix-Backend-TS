@@ -26,6 +26,12 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
     return responseHelper(res, 404, "Failed", "Job not found.");
   }
 
+  const existingInterview = await InterviewModel.findOne({ candidateId: userId, jobId: job._id });
+
+  if (existingInterview) {
+    return responseHelper(res, 400, "Failed", "Interview already scheduled for this job.");
+  }
+
   if (job.deadline && new Date() > new Date(job.deadline)) {
     return responseHelper(
       res,
@@ -62,11 +68,10 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
       "Scheduled time must be today or in the future."
     );
   }
-
   if (
     scheduledDate &&
     job.deadline &&
-    new Date(scheduledDate) > new Date(job.deadline)
+    new Date(scheduled) > new Date(job.deadline)
   ) {
     return responseHelper(
       res,

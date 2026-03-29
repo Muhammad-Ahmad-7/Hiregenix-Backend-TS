@@ -111,4 +111,6 @@ const JobSchema = new Schema<IJob>({
     },
 }, { timestamps: true });
 
+JobSchema.index({ deadline: 1, status: 1 }); // compound index for efficient querying of open jobs by deadline
+
 export const JobModel = mongoose.model<IJob>("Job", JobSchema);

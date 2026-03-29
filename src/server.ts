@@ -7,6 +7,7 @@ import { connectToQdrant } from "./config/qdrant.js";
 import connectToRabbitMQ from "./config/rabbitmq.js";
 import interviewReminderJob from "./cron/interviewCron.js";
 import { initializeSocket } from "./utils/socket.js";
+import jobDeadlinePassedJob from "./cron/jobDeadlinePassedCron.js";
 
 dotenv.config();
 
@@ -20,10 +21,17 @@ connectToRabbitMQ().catch((err) => {
 
 export const qdrantClient = connectToQdrant();
 
+// ---> Cron jobs
+
+// Start the interview reminder job
+interviewReminderJob();
+
+// Start the job deadline passed job
+jobDeadlinePassedJob();
+
 connectDB()
   .then(() => {
     server.listen(PORT, () => {
-      interviewReminderJob();
       console.log(`🚀 Server running at http://localhost:${PORT}`);
     });
   })

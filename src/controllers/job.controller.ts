@@ -159,6 +159,37 @@ const getAllJobsWithPagination = asyncHandler(async (req: Request, res: Response
             }
         },
 
+        // lookup applied jobs for this user
+        {
+            $lookup: {
+                from: "interviews",
+                let: {
+                    jobId: "$_id",
+                    candidateId: new mongoose.Types.ObjectId(userId) // Move ObjectId creation here
+                },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ["$jobId", "$$jobId"] },
+                                    { $eq: ["$candidateId", "$$candidateId"] } // Use the variable from let
+                                ]
+                            }
+                        }
+                    }
+                ],
+                as: "appliedRelation"
+            }
+        },
+
+        // Add isApplied flag
+        {
+            $addFields: {
+                isApplied: { $gt: [{ $size: "$appliedRelation" }, 0] }
+            }
+        },
+
         // Remove unneeded lookup data
         {
             $project: {
