@@ -6,6 +6,7 @@ export interface IMessage extends Document {
   text: string;
   status: IMessageStatus;
   reaction?: string;
+  replyingTo?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -6,7 +6,13 @@ import { Message } from "../models/message.model.js";
 import { Chat } from "../models/chat.model.js";
 import { CandidateModel } from "../models/candidate.model.js";
 import { CompanyModel } from "../models/company.model.js";
-import { IMessage } from "../types/chat.interface.js";
+import type { ICandidate } from "../models/candidate.model.js";
+import type { ICompany } from "../models/company.model.js";
+import type { IMessage } from "../types/chat.interface.js";
+
+type CompanyOrCandidateDoc =
+  | (mongoose.Document & ICompany)
+  | (mongoose.Document & ICandidate);
 
 // ===================================================
 // GET ALL MESSAGES FOR A SPECIFIC CHAT
@@ -15,14 +21,13 @@ const getMessages = asyncHandler(async (req: Request, res: Response) => {
   const currentUserId = req.user._id;
   console.log("current user:", req.user);
   const chatId = req.params.chatId;
-  let user = await CompanyModel.findOne({
+  let user: CompanyOrCandidateDoc | null = await CompanyModel.findOne({
     userId: currentUserId,
   });
   if (!user || !user._id) {
-    const candidate = await CandidateModel.findOne({
+    user = await CandidateModel.findOne({
       userId: currentUserId,
     });
-    user = candidate;
     //TO-DO: return response of no user
     if (!user || !user._id) return;
   }
@@ -100,14 +105,13 @@ const getMessages2 = asyncHandler(async (req: Request, res: Response) => {
   const currentUserId = req.user._id;
   console.log("current user:", req.user);
   const chatId = req.params.chatId;
-  let user = await CompanyModel.findOne({
+  let user: CompanyOrCandidateDoc | null = await CompanyModel.findOne({
     userId: currentUserId,
   });
   if (!user || !user._id) {
-    const candidate = await CandidateModel.findOne({
+    user = await CandidateModel.findOne({
       userId: currentUserId,
     });
-    user = candidate;
     //TO-DO: return response of no user
     if (!user || !user._id) return;
   }
@@ -161,17 +165,20 @@ const getMessages2 = asyncHandler(async (req: Request, res: Response) => {
     Message.countDocuments({ chat: chatId }),
   ]);
   const msgs = messages.reverse();
-  const groupedMessages = msgs.reduce((acc: any, message: IMessage) => {
-    const date = new Date(message.createdAt).toISOString().split("T")[0];
-    // format: YYYY-MM-DD
+  const groupedMessages = msgs.reduce(
+    (acc: Record<string, IMessage[]>, message: IMessage) => {
+      const dateKey = new Date(message.createdAt).toISOString().split("T")[0];
+      if (!dateKey) return acc;
 
-    if (!acc[date]) {
-      acc[date] = [];
-    }
+      if (!acc[dateKey]) {
+        acc[dateKey] = [];
+      }
 
-    acc[date].push(message);
-    return acc;
-  }, {});
+      acc[dateKey].push(message);
+      return acc;
+    },
+    {} as Record<string, IMessage[]>,
+  );
   return responseHelper(
     res,
     200,
