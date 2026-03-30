@@ -62,7 +62,7 @@ const getChats = asyncHandler(async (req: Request, res: Response) => {
 
       if (!otherParticipantData) return null;
 
-      let participantProfile = null;
+      let participantProfile: any = null;
 
       // Fetch profile depending on role
       if (otherParticipantData.userType === "candidate") {
@@ -220,7 +220,7 @@ const getOrCreateChat = asyncHandler(async (req: Request, res: Response) => {
     (p: any) => p.userId._id.toString() !== currentUserId.toString(),
   );
 
-  let participantProfile = null;
+  let participantProfile: any = null;
 
   // Fetch Candidate or Company profile
   if (otherParticipantData.userType === "candidate") {
