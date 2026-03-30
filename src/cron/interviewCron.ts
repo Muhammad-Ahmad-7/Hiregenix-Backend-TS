@@ -19,13 +19,16 @@ const interviewReminderJob = (): void => {
         const interviews: IInterview[] = await InterviewModel.find({
             scheduledDate: { $gte: startOfTomorrow, $lte: endOfTomorrow }
         })
-            .populate("companyId")
-            .populate("jobId")
+            .populate("companyId", "companyName")
+            .populate({
+                path: "jobId",
+                select: "title role experienceLevel"
+            })
             .populate({
                 path: "candidateId",
                 populate: {
                     path: "userId",
-                    select: "email name"
+                    select: "email"
                 }
             })
             .exec(); // ensures proper promise typing
@@ -43,15 +46,18 @@ const interviewReminderJob = (): void => {
         // Loop through each interview and send email
         for (const interview of interviews) {
             try {
-                const candidateUser = (interview.candidateId as any)?.userId;
-                const company = (interview.companyId as any)
-                const candidateEmail = candidateUser?.email;
+                const candidateUser = (interview.candidateId as any);
+                const candidateEmail = candidateUser?.userId?.email;
                 const candidateName = candidateUser?.fullName || "Candidate";
+                const candidatePhone = candidateUser?.contactNumber || "N/A";
+
+                const company = (interview.companyId as any)
                 const companyName = company.companyName || "Company";
-                const jobTitle = (interview.jobId as { title?: string })?.title || "your job";
-                const interviewGuideline =
-                    (interview.jobId as { interviewGuideline?: string })?.interviewGuideline ||
-                    `Please be prepared for the interview scheduled on ${interview?.scheduledDate?.toDateString()}. Arrive on time and be ready.`;
+
+                const job = (interview.jobId as any);
+                const jobTitle = job.title || "Job Title";
+                const jobRole = job.role || "Job Role";
+                const jobExperienceLevel = job.experienceLevel || "Experience Level";
 
                 if (!candidateEmail) {
                     console.warn(`Skipping interview ${interview._id} - candidate email not found`);
@@ -61,9 +67,11 @@ const interviewReminderJob = (): void => {
                 await EmailService.sendInterviewReminderEmail(
                     candidateEmail,
                     candidateName,
+                    candidatePhone,
+                    jobRole,
+                    jobExperienceLevel,
                     jobTitle,
                     companyName,
-                    interviewGuideline
                 );
 
                 console.log(`Interview reminder sent to ${candidateEmail} for ${jobTitle}`);

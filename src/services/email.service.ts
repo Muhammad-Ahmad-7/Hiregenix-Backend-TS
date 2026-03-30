@@ -107,24 +107,39 @@ export class EmailService {
     static async sendInterviewReminderEmail(
         to: string,
         candidateName: string,
+        candidatePhone: string,
+        jobRole: string,
+        jobExperienceLevel: string,
         jobTitle: string,
-        companyName: string,
-        interviewGuideline: string
+        companyName: string
     ) {
         try {
-            // Load template
             const template = await this.getTemplate('interviewReminder');
 
-            // Replace template variables
+            const interviewGuideline = `
+        This is an AI-powered interview process.
+
+        - You will join the interview online.
+        - Your basic face verification will be performed first.
+        - You must allow camera and microphone access.
+        - Your interview will be recorded for evaluation.
+        - Do NOT cheat or switch tabs during the interview.
+        - Answer questions by speaking clearly.
+        - Your video and audio will be sent to the server for final evaluation.
+        - Once the report is generated, you can view it on your dashboard.
+        `;
+
             const html = this.replaceTemplateVariables(template, {
                 candidateName,
+                candidatePhone,
+                jobRole,
+                jobExperienceLevel,
                 jobTitle,
                 companyName,
                 interviewGuideline,
                 year: new Date().getFullYear().toString()
             });
 
-            // Mail options
             const mailOptions = {
                 from: `"Hiregenx" <${config.email.user}>`,
                 to,
@@ -132,7 +147,6 @@ export class EmailService {
                 html,
             };
 
-            // Send email
             const info = await this.transporter.sendMail(mailOptions);
             console.log('Interview reminder email sent successfully:', info.messageId);
 

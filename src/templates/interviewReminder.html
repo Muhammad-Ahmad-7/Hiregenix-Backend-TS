@@ -1,6 +1,9 @@
+<!DOCTYPE html>
 <html>
 
 <head>
+    <meta charset="UTF-8">
+    <title>Interview Reminder</title>
     <style>
         .email-container {
             max-width: 600px;
@@ -17,54 +20,105 @@
         }
 
         .brand {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: bold;
             color: #2A5BD7;
         }
 
-        .button {
-            background-color: #698eea;
-            border: none;
-            color: white;
-            padding: 14px 28px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 20px 0;
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .label {
+            font-weight: bold;
+        }
+
+        .guidelines {
+            background-color: #f5f7fb;
+            padding: 15px;
             border-radius: 6px;
+            font-size: 14px;
+            white-space: pre-line;
+        }
+
+        .warning {
+            color: #d93025;
+            font-weight: bold;
         }
 
         .footer {
-            font-size: 13px;
+            font-size: 12px;
             color: #777;
             margin-top: 40px;
             text-align: center;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: #e5e5e5;
+            margin: 20px 0;
         }
     </style>
 </head>
 
 <body>
     <div class="email-container">
+
         <div class="header">
             <div class="brand">Hiregenx</div>
         </div>
 
         <h2>Interview Reminder</h2>
+
         <p>Hi {{candidateName}},</p>
 
-        <p>This is a friendly reminder for your upcoming interview for the position of <strong>{{jobTitle}}</strong> at
-            <strong>{{companyName}}</strong>.</p>
+        <p>
+            This is a reminder for your upcoming interview. Please review the details below carefully.
+        </p>
 
-        <p>Here are some guidelines to help you prepare:</p>
-        <p>{{interviewGuideline}}</p>
+        <div class="divider"></div>
 
-        <p>We wish you the best of luck!</p>
+        <div class="section">
+            <p><span class="label">Position:</span> {{jobTitle}}</p>
+            <p><span class="label">Role:</span> {{jobRole}}</p>
+            <p><span class="label">Experience Level:</span> {{jobExperienceLevel}}</p>
+            <p><span class="label">Company:</span> {{companyName}}</p>
+            <p><span class="label">Registered Phone:</span> {{candidatePhone}}</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section">
+            <p class="label">AI Interview Instructions:</p>
+
+            <div class="guidelines">
+                {{interviewGuideline}}
+            </div>
+        </div>
+
+        <div class="section warning">
+            Important:
+            Any attempt to cheat, switch tabs, or bypass monitoring may result in disqualification.
+        </div>
+
+        <p>
+            Make sure your device is ready (camera, microphone, and stable internet connection) before starting the
+            interview.
+        </p>
+
+        <p>
+            Once your interview is completed, your evaluation report will be available on your dashboard.
+        </p>
+
+        <p>Best of luck,<br>Hiregenx Team</p>
 
         <div class="footer">
-            <p>© {{year}} Hiregenx. All rights reserved.<br>
-                Smarter hiring, powered by AI.</p>
+            <p>
+                © {{year}} Hiregenx. All rights reserved.<br>
+                Smarter hiring, powered by AI.
+            </p>
         </div>
+
     </div>
 </body>
 
