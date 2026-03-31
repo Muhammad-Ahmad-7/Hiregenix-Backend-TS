@@ -85,13 +85,13 @@ const getChats = asyncHandler(async (req: Request, res: Response) => {
         role: otherParticipantData.userId.role,
         ...(otherParticipantData.userType === "candidate"
           ? {
-              fullName: participantProfile?.fullName,
-              profilePictureUrl: participantProfile?.profilePictureUrl,
-            }
+            fullName: participantProfile?.fullName,
+            profilePictureUrl: participantProfile?.profilePictureUrl,
+          }
           : {
-              companyName: participantProfile?.companyName,
-              logoUrl: participantProfile?.logoUrl,
-            }),
+            companyName: participantProfile?.companyName,
+            logoUrl: participantProfile?.logoUrl,
+          }),
       };
 
       return {
@@ -131,6 +131,14 @@ const getChats = asyncHandler(async (req: Request, res: Response) => {
 const getOrCreateChat = asyncHandler(async (req: Request, res: Response) => {
   const currentUserId = req.user._id;
   const participantId = req.params.participantId;
+
+  if (!participantId) {
+    return res.status(400).json({ message: "Participant id is required" });
+  }
+
+  if (Array.isArray(participantId)) {
+    return res.status(400).json({ message: "Participant id must be a single value" });
+  }
 
   // Validate participant ID
   if (!participantId || !mongoose.Types.ObjectId.isValid(participantId)) {
@@ -244,13 +252,13 @@ const getOrCreateChat = asyncHandler(async (req: Request, res: Response) => {
     role: otherParticipantData.userId.role,
     ...(otherParticipantData.userType === "candidate"
       ? {
-          fullName: participantProfile?.fullName,
-          profilePictureUrl: participantProfile?.profilePictureUrl,
-        }
+        fullName: participantProfile?.fullName,
+        profilePictureUrl: participantProfile?.profilePictureUrl,
+      }
       : {
-          companyName: participantProfile?.companyName,
-          logoUrl: participantProfile?.logoUrl,
-        }),
+        companyName: participantProfile?.companyName,
+        logoUrl: participantProfile?.logoUrl,
+      }),
   };
 
   const formattedChat = {

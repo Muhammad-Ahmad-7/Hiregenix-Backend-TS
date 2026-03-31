@@ -33,6 +33,9 @@ const getMessages = asyncHandler(async (req: Request, res: Response) => {
   }
   console.log(user._id);
   // Validate chat ID
+  if (Array.isArray(chatId)) {
+    return res.status(400).json({ message: "Chat id must be a single value" });
+  }
   if (!chatId || !mongoose.Types.ObjectId.isValid(chatId)) {
     return res.status(400).json({ message: "Invalid chat id" });
   }
@@ -117,6 +120,10 @@ const getMessages2 = asyncHandler(async (req: Request, res: Response) => {
   }
   console.log(user._id);
   // Validate chat ID
+  if (Array.isArray(chatId)) {
+    return res.status(400).json({ message: "Chat id must be a single value" });
+  }
+
   if (!chatId || !mongoose.Types.ObjectId.isValid(chatId)) {
     return res.status(400).json({ message: "Invalid chat id" });
   }

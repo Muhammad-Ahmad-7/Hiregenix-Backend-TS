@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 
 
 export interface IQuestionResult extends Document {
-    _id: string;                        // MongoDB/DB primary key
+    _id: mongoose.Types.ObjectId;        // MongoDB/DB primary key
     interviewId: Schema.Types.ObjectId; // FK to the Interview document
     questionId: string;                 // question id from question bank
     questionText: string;               // Snapshot of question at the time of interview

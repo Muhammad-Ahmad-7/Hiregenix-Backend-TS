@@ -108,7 +108,7 @@ UserSchema.methods.generateAccessToken = async function (this: IUser): Promise<s
     }
 
     const payload: JwtPayload = {
-        _id: this._id as string,
+        _id: this._id.toString(),
         email: this.email,
         username: this.username,
         role: this.role,

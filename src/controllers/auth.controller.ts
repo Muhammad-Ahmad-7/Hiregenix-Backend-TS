@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { IUserInput, IUserLogin } from "../types/user.types.js";
 import { User } from "../models/user.model.js";
 import { EmailService } from "../services/email.service.js";
-import crypto from "crypto"
+import * as crypto from "node:crypto";
 import CandidateModel from "../models/candidate.model.js";
 import CompanyModel from "../models/company.model.js";
 

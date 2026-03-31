@@ -115,7 +115,7 @@ const completeCandidateProfile = asyncHandler(
     try {
       sendToQueue(
         CANDIDATE_PROFILE_EMBEDDINGS_QUEUE,
-        (task._id as string).toString(),
+        task._id.toString(),
       );
       console.log("Message sent to RabbitMQ queue successfully");
     } catch (error) {
@@ -209,7 +209,7 @@ const updateCandidateProfile = asyncHandler(
 
     sendToQueue(
       CANDIDATE_PROFILE_EMBEDDINGS_QUEUE,
-      (task._id as string).toString(),
+      task._id.toString(),
     );
 
     return responseHelper(
@@ -345,7 +345,7 @@ const resumeParser = asyncHandler(async (req: Request, res: Response) => {
 
   try {
     // Use the safe getChannel function
-    sendToQueue(RESUME_QUEUE, (task._id as string).toString());
+    sendToQueue(RESUME_QUEUE, task._id.toString());
     console.log("Message sent to RabbitMQ queue successfully");
   } catch (error) {
     console.error("RabbitMQ error:", error);

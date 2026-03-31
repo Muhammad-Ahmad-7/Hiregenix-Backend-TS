@@ -69,7 +69,7 @@ const createJob = asyncHandler(async (req: Request, res: Response) => {
     const newTask = await TaskModel.create({
         userId: companyId,
         type: "job_description_embeddings",
-        payload: { jobId: (newJob._id as string).toString() },
+        payload: { jobId: newJob._id.toString() },
         status: "pending"
     })
 
@@ -78,7 +78,7 @@ const createJob = asyncHandler(async (req: Request, res: Response) => {
         return;
     }
 
-    sendToQueue(JOB_DESCRIPTION_EMBEDDINGS_QUEUE, (newTask._id as string).toString());
+    sendToQueue(JOB_DESCRIPTION_EMBEDDINGS_QUEUE, newTask._id.toString());
 
     return responseHelper(res, 200, "Success", "Job created successfully.", {
         data: {
@@ -319,7 +319,7 @@ const updateJobById = asyncHandler(async (req: Request, res: Response) => {
     const newTask = await TaskModel.create({
         userId: companyId,
         type: "job_description_embeddings",
-        payload: { jobId: (updatedJob._id as string).toString() },
+        payload: { jobId: updatedJob._id.toString() },
         status: "pending"
     })
 
@@ -328,7 +328,7 @@ const updateJobById = asyncHandler(async (req: Request, res: Response) => {
         return;
     }
 
-    sendToQueue(JOB_DESCRIPTION_EMBEDDINGS_QUEUE, (newTask._id as string).toString());
+    sendToQueue(JOB_DESCRIPTION_EMBEDDINGS_QUEUE, newTask._id.toString());
 
     return responseHelper(res, 200, "Success", "Job updated successfully and queued for processing.", {
         data: {
@@ -618,9 +618,16 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    // const interviews = await InterviewModel.find({ jobId, companyId: userId }).populate("candidateId", "fullName countryName profilePictureUrl").sort({ scheduledDate: -1 }).skip(skip).limit(limit);
+    if (!jobId) {
+        return responseHelper(res, 400, "Failed", "Job Id is required.");
+    }
 
-
+    if (Array.isArray(jobId)) {
+        return responseHelper(res, 400, "Failed", "Job Id must be a string.");
+    }
+    if (!mongoose.Types.ObjectId.isValid(jobId)) {
+        return responseHelper(res, 400, "Failed", "Invalid Job Id.");
+    }
     const interviews = await InterviewModel.aggregate([
         {
             $match: {
@@ -852,6 +859,9 @@ const generateJobDataUsingAI = asyncHandler(async (req: Request, res: Response) 
     const { jobTitle } = req.params;
     if (!jobTitle) {
         return responseHelper(res, 400, "Failed", "Job title is required.");
+    }
+    if (Array.isArray(jobTitle)) {
+        return responseHelper(res, 400, "Failed", "Job title must be a string.");
     }
     const jobData = await generateJobData(jobTitle);
 

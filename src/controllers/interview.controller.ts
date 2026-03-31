@@ -358,7 +358,7 @@ const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Res
   const newTask = await TaskModel.create({
     userId: userId,
     type: "speech_to_text",
-    payload: { questionResultId: (questionResult._id as string).toString() },
+    payload: { questionResultId: questionResult._id.toString() },
     status: "pending"
   })
 
@@ -367,7 +367,7 @@ const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Res
     return;
   }
 
-  sendToQueue(SPEECH_TO_TEXT_QUEUE, (newTask._id as string).toString());
+  sendToQueue(SPEECH_TO_TEXT_QUEUE, newTask._id.toString());
 
   return responseHelper(res, 200, "Success", "Question result created successfully.", {
     data: {
@@ -466,7 +466,7 @@ const createLivenessCheck = asyncHandler(async (req: Request, res: Response) => 
     return;
   }
 
-  sendToQueue(LIVENESS_CHECK_QUEUE, (task._id as string).toString());
+  sendToQueue(LIVENESS_CHECK_QUEUE, task._id.toString());
   return responseHelper(res, 200, "Success", "Liveness check processing started.", {
     data: {
       taskId: task._id,
