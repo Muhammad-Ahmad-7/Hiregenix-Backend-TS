@@ -18,7 +18,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: [config.frontend.url!, config.frontend.dockerUrl!],
+    origin: [config.frontend.url!, config.frontend.dockerUrl!, config.frontend.prodDevUrl!],
     credentials: true,
   }),
 );
