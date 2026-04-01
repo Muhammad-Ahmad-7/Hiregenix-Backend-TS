@@ -12,10 +12,24 @@ export default async function connectToRabbitMQ() {
             "x-dead-letter-routing-key": "stt.failure"
         }
 
-        await channel.assertQueue(RESUME_QUEUE, { durable: true });
+        const mainArgsForCandidateProfileEmbeddingsQueue = {
+            "x-dead-letter-exchange": "worker_failure_exchange",
+            "x-dead-letter-routing-key": "candidate_profile_embeddings.failure"
+        }
+
+        const mainArgsForJobDescriptionEmbeddingsQueue = {
+            "x-dead-letter-exchange": "worker_failure_exchange",
+            "x-dead-letter-routing-key": "job_description_embeddings.failure"
+        }
+
+        const mainArgsForResumeQueue = {
+            "x-dead-letter-exchange": "worker_failure_exchange",
+            "x-dead-letter-routing-key": "resume_analysis.failure"
+        }
+        await channel.assertQueue(RESUME_QUEUE, { durable: true, arguments: mainArgsForResumeQueue });
         await channel.assertQueue(SPEECH_TO_TEXT_QUEUE, { durable: true, arguments: mainArgs });
-        await channel.assertQueue(CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, { durable: true });
-        await channel.assertQueue(JOB_DESCRIPTION_EMBEDDINGS_QUEUE, { durable: true });
+        await channel.assertQueue(CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, { durable: true, arguments: mainArgsForCandidateProfileEmbeddingsQueue });
+        await channel.assertQueue(JOB_DESCRIPTION_EMBEDDINGS_QUEUE, { durable: true, arguments: mainArgsForJobDescriptionEmbeddingsQueue });
         await channel.assertQueue(LIVENESS_CHECK_QUEUE, { durable: true });
         console.log("Connected to RabbitMQ");
         return channel;

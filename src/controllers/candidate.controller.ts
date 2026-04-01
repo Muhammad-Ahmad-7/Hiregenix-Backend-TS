@@ -372,14 +372,13 @@ const resumeParser = asyncHandler(async (req: Request, res: Response) => {
 
 const getResumeParsedData = asyncHandler(
   async (req: Request, res: Response) => {
-    const candidate = await CandidateModel.findOne({ userId: req.user._id });
+
+    const candidate = await CandidateModel.findById(req.userId);
 
     if (!candidate) {
       return responseHelper(res, 404, "Failed", "Candidate not found.");
     }
-
-    const resume = await ResumeModel.findOne({ candidateId: candidate._id });
-
+    const resume = await ResumeModel.findById(candidate.resumeId?.toString());
     if (!resume) {
       return responseHelper(res, 404, "Failed", "Resume not found.");
     }
