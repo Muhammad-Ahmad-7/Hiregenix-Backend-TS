@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { InterviewModel, IInterview } from "../models/interview.model.js";
 import { EmailService } from "../services/email.service.js";
+import { TIMEZONE } from "../utils/constant.js";
 
 const interviewReminderJob = (): void => {
     // Runs every day at midnight (server local time)
@@ -81,7 +82,7 @@ const interviewReminderJob = (): void => {
         }
 
         console.log(`[CRON] Interview reminder job completed at ${new Date().toISOString()}`);
-    });
+    }, { timezone: TIMEZONE });
 };
 
 export default interviewReminderJob;

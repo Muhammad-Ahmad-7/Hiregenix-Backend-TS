@@ -3,15 +3,14 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { JobModel } from "../models/job.model.js";
 import responseHelper from "../utils/responseHelper.js";
 import { InterviewModel } from "../models/interview.model.js";
-import cloudinary from "../config/cloudinary.js";
-import fs from "fs";
 import QuestionResultModel from "../models/question-result.model.js";
 import mongoose, { isValidObjectId } from "mongoose";
 import { TaskModel } from "../models/task.model.js";
-import { LIVENESS_CHECK_QUEUE, SPEECH_TO_TEXT_QUEUE } from "../utils/constant.js";
+import { LIVENESS_CHECK_QUEUE, SPEECH_TO_TEXT_QUEUE, TIMEZONE } from "../utils/constant.js";
 import { sendToQueue } from "../config/rabbitmq.js";
 import CandidateModel from "../models/candidate.model.js";
 import compareFaces from "../services/faceVerification.service.js";
+import { DateTime } from "luxon";
 
 const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   // Implementation for scheduling interview
@@ -32,7 +31,13 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
     return responseHelper(res, 400, "Failed", "Interview already scheduled for this job.");
   }
 
-  if (job.deadline && new Date() > new Date(job.deadline)) {
+  const nowDateZone = DateTime.now().setZone(TIMEZONE);
+  const jobDeadlineZone = job.deadline ? DateTime.fromJSDate(job.deadline).setZone(TIMEZONE) : null;
+
+  console.log("Current Date (User Zone):", nowDateZone.toString());
+  console.log("Job Deadline (User Zone):", jobDeadlineZone?.toString());
+
+  if (job.deadline && nowDateZone > jobDeadlineZone!) {
     return responseHelper(
       res,
       400,
@@ -44,23 +49,21 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   const companyId = job.companyId;
 
   const { scheduledDate } = req.body;
+  const userZone = TIMEZONE; // "Asia/Karachi"
 
-  //   if (scheduledDate && new Date(scheduledDate) < new Date()) {
-  //     return responseHelper(
-  //       res,
-  //       400,
-  //       "Failed",
-  //       "Scheduled time must be in the future."
-  //     );
-  //   }
-  const scheduled = new Date(scheduledDate);
-  const today = new Date();
 
-  // Zero out the time part for both dates
-  scheduled.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
+  const scheduledZone = DateTime.fromISO(scheduledDate, { zone: userZone }).startOf("day");
 
-  if (scheduled < today) {
+  if (!scheduledZone.isValid) {
+    return responseHelper(res, 400, "Failed", "Invalid scheduled date.");
+  }
+
+  const todayZone = DateTime.now().setZone(userZone).startOf("day");
+
+  console.log("Scheduled Date (User Zone):", scheduledZone.toString());
+  console.log("Today's Date (User Zone):", todayZone.toString());
+
+  if (scheduledZone < todayZone) {
     return responseHelper(
       res,
       400,
@@ -71,7 +74,7 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   if (
     scheduledDate &&
     job.deadline &&
-    new Date(scheduled) > new Date(job.deadline)
+    scheduledZone > jobDeadlineZone!
   ) {
     return responseHelper(
       res,
@@ -81,12 +84,16 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
     );
   }
 
+  const scheduledDateUTC = scheduledZone.toUTC().toJSDate();
+
+  console.log("Scheduled Date (UTC):", scheduledDateUTC.toISOString());
+
   const interview = await InterviewModel.create({
     candidateId: userId,
     jobId: job._id,
     companyId: companyId,
     type: "live",
-    scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
+    scheduledDate: scheduledDate ? scheduledDateUTC : undefined,
     status: scheduledDate ? "scheduled" : "pending",
   });
 
@@ -111,6 +118,22 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
 
 const getTodayCandidateInterviews = asyncHandler(
   async (req: Request, res: Response) => {
+
+    const startZone = DateTime.now()
+      .setZone(TIMEZONE) // right now its set for pakistan only, we can make it dynamic based on user preference in future
+      .startOf("day")
+      .toUTC()
+      .toJSDate();
+
+    const endZone = DateTime.now()
+      .setZone(TIMEZONE)
+      .endOf("day")
+      .toUTC()
+      .toJSDate();
+
+    console.log("Start of day in UTC:", startZone);
+    console.log("End of day in UTC:", endZone);
+
     const userId = req.userId;
 
     const start = new Date();
@@ -119,11 +142,12 @@ const getTodayCandidateInterviews = asyncHandler(
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    console.log("user id", userId)
+    console.log("Start of day:", start);
+    console.log("End of day:", end);
 
     const interviews = await InterviewModel.find({
       candidateId: userId,
-      scheduledDate: { $gte: start, $lte: end },
+      scheduledDate: { $gte: startZone, $lte: endZone },
     })
       .populate("jobId")
       .populate("companyId")

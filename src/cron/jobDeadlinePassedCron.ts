@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import { JobModel } from '../models/job.model.js';
+import { TIMEZONE } from '../utils/constant.js';
 
 const jobDeadlinePassedJob = (): void => {
     // Runs every hour (server local time)
@@ -25,7 +26,7 @@ const jobDeadlinePassedJob = (): void => {
         } finally {
             console.log(`[CRON] Job deadline passed job completed at ${new Date().toISOString()}`);
         }
-    });
+    }, { timezone: TIMEZONE });
 };
 
 export default jobDeadlinePassedJob;
