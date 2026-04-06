@@ -10,20 +10,27 @@ import uploadRouter from "./routes/upload.route.js";
 import jobRouter from "./routes/job.route.js";
 import interviewRouter from "./routes/interview.route.js";
 import chatRouter from "./routes/chat.route.js";
-
 import messageRouter from "./routes/message.route.js";
+import chatbotRouter from "./routes/companyChatBot.route.js";
+import generalRouter from "./routes/general.route.js";
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: [config.frontend.url!, config.frontend.dockerUrl!, config.frontend.prodDevUrl!],
+    origin: [
+      config.frontend.url!,
+      config.frontend.dockerUrl!,
+      config.frontend.prodDevUrl!,
+    ],
     credentials: true,
   }),
 );
 app.use(cookiesParser());
 
+app.use("/api/v1/general/", generalRouter);
+app.use("/api/v1/chatbot", chatbotRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/candidate", candidateRouter);
 app.use("/api/v1/company", companyRouter);

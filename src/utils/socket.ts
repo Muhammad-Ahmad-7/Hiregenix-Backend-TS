@@ -12,6 +12,9 @@ export const onlineUsers: Map<string, string> = new Map();
 
 export const initializeSocket = (httpServer: HttpServer) => {
   const allowedOrigins = [
+    config.frontend.url!,
+    config.frontend.dockerUrl!,
+    config.frontend.prodDevUrl!,
     "http://localhost:3000", // Expo mobile
     "http://localhost:5173", // Vite web dev
     process.env.FRONTEND_URL, // production

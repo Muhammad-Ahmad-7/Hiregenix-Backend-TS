@@ -46,6 +46,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-rekognition": "^3.1020.0",
+    "@google/generative-ai": "^0.24.1",
     "@langchain/core": "^1.1.32",
     "@langchain/google": "^0.1.6",
     "@langchain/google-genai": "^2.1.25",
