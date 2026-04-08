@@ -175,6 +175,27 @@ const getCompanyProfile = asyncHandler(async (req: Request, res: Response) => {
   );
 });
 
+const getAllCompanies = asyncHandler(async (req: Request, res: Response) => {
+  const companies = await CompanyModel.find({
+    isDeleted: false,
+    isProfileCompleted: true,
+  })
+    .select("companyName logoUrl contactEmail userId")
+    .lean();
+
+  return responseHelper(
+    res,
+    200,
+    "Success",
+    "Companies fetched successfully.",
+    {
+      data: {
+        companies,
+      },
+    },
+  );
+});
+
 const updatedCompanyProfile = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.userId;
@@ -266,5 +287,6 @@ export {
   completeCompanyProfile,
   getDashboardStats,
   getCompanyProfile,
+  getAllCompanies,
   updatedCompanyProfile,
 };
