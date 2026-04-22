@@ -323,13 +323,13 @@ const getCandidateInterviewById = asyncHandler(
     const userId = req.userId;
     const { interviewId } = req.params;
 
-    const interview = await InterviewModel.findById(interviewId).populate(
-      "jobId",
-      "title role workMode deadline"
-    ).populate(
-      "companyId",
-      "companyName logoUrl"
-    );
+    const interview = await InterviewModel.findByIdAndUpdate(
+      interviewId,
+      { status: "in-progress" }, // 1. The update object
+      { new: true, runValidators: true } // 2. Options: return the updated doc & validate
+    )
+      .populate("jobId", "title role workMode deadline")
+      .populate("companyId", "companyName logoUrl");
     if (!interview) {
       return responseHelper(res, 404, "Failed", "Interview not found.");
     }
