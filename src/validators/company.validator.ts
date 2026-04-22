@@ -79,7 +79,7 @@ export const updateJobSchema = z.object({
 
     experienceLevel: z.optional(z.enum(["entry", "mid", "senior"])),
 
-    description: z.optional(z.string().min(2).max(500)),
+    description: z.optional(z.string().min(2).max(2500)),
 
     requiredSkills: z.optional(z.array(z.string().min(2).max(20))),
 
@@ -104,6 +104,8 @@ export const updateJobSchema = z.object({
 
     requirements: z.optional(z.array(z.string().min(2).max(500))),
 
+    status: z.optional(z.enum(["open", "closed"])),
+
     deadline: z.coerce.date()
 
 })
@@ -111,3 +113,13 @@ export const updateJobSchema = z.object({
 export const generateJobDataSchema = z.object({
     jobTitle: z.string().min(2).max(100),
 })
+
+
+export const generateJobDataUsingAISchema = z.object({
+    jobTitle: z.string().min(2).max(100),
+    jobRole: z.string().min(2).max(100),
+    experienceLevel: z.enum(["entry", "mid", "senior"]),
+    workMode: z.enum(["full-time", "part-time", "remote"]),
+    skills: z.array(z.string().min(2).max(100)),
+    type: z.enum(["requirements", "interviewGuideline", "description"])
+});

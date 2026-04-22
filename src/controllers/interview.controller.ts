@@ -18,17 +18,14 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.userId;
 
   const { jobId } = req.params;
+  const { scheduledDate } = req.body;
+
+  console.log("date send ", scheduledDate)
 
   const job = await JobModel.findById(jobId);
 
   if (!job) {
     return responseHelper(res, 404, "Failed", "Job not found.");
-  }
-
-  const existingInterview = await InterviewModel.findOne({ candidateId: userId, jobId: job._id });
-
-  if (existingInterview) {
-    return responseHelper(res, 400, "Failed", "Interview already scheduled for this job.");
   }
 
   const nowDateZone = DateTime.now().setZone(TIMEZONE);
@@ -48,7 +45,6 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
 
   const companyId = job.companyId;
 
-  const { scheduledDate } = req.body;
   const userZone = TIMEZONE; // "Asia/Karachi"
 
 
@@ -87,6 +83,36 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   const scheduledDateUTC = scheduledZone.toUTC().toJSDate();
 
   console.log("Scheduled Date (UTC):", scheduledDateUTC.toISOString());
+
+
+  const existingInterview = await InterviewModel.findOne({ candidateId: userId, jobId: job._id });
+
+  if (existingInterview) {
+    const newInterview = await InterviewModel.findOneAndUpdate(
+      { _id: existingInterview._id },
+      {
+        scheduledDate: scheduledDate ? scheduledDateUTC : undefined,
+        status: scheduledDate ? "scheduled" : "pending",
+      },
+      { new: true }
+    );
+
+    if (!newInterview) {
+      return responseHelper(res, 500, "Failed", "Failed to reschedule existing interview.");
+    }
+
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Interview rescheduled successfully.",
+      {
+        data: {
+          interview: newInterview,
+        },
+      }
+    );
+  }
 
   const interview = await InterviewModel.create({
     candidateId: userId,
@@ -186,6 +212,8 @@ const getAllCandidateInterviews = asyncHandler(
     //   .skip(skip)
     //   .limit(limit);
 
+    console.log("MEEEEEE")
+
     const interviews = await InterviewModel.aggregate([
       {
         $match: {
@@ -247,13 +275,14 @@ const getAllCandidateInterviews = asyncHandler(
           type: 1,
           scheduledDate: 1,
           status: 1,
+          job: 1,
           "report._id": 1,
           "report.topStrengths": 1,
           "report.topWeaknesses": 1,
           "report.overallImprovementSuggestions": 1,
-          "job.title": 1,
-          "job.workMode": 1,
-          "job.deadline": 1,
+          // "job.title": 1,
+          // "job.workMode": 1,
+          // "job.deadline": 1,
           "company.companyName": 1,
           "company.logoUrl": 1,
         },

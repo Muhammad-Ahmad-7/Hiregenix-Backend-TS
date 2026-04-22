@@ -1,46 +1,58 @@
 import { z } from "zod";
 
-const JobDataSchema = z.object({
-    jobTitle: z.string().describe("The official title of the position"),
-    jobRole: z.string().describe("Detailed role or category (e.g., Backend Developer)"),
-    experienceLevel: z.enum(["Entry", "Mid", "Senior"]),
-    status: z.enum(["Open", "Closed"]),
-    workMode: z.enum(["Remote", "On-site", "Hybrid"]),
-    applicationDeadline: z.string().describe("ISO formatted date string after today's date"),
-    city: z.string().min(2).max(100).describe("City where the job is located"),
-    country: z.string().min(2).max(100).describe("Country where the job is located"),
-    minSalary: z.number().min(0).describe("Minimum salary for the position"),
-    maxSalary: z.number().describe("Maximum salary for the position"),
-    currency: z.string().min(3).max(10).describe("Currency for the salary (e.g., USD, PKR)"),
-    jobDescription: z.string().min(2).max(5000).describe("Comprehensive overview of the job"),
-    interviewGuideline: z.string().min(2).max(2000).describe("Instructions for the interview process"),
-    skills: z.array(z.string()).min(1).max(10).describe("List of up to 10 technical skills"),
-    requirements: z.array(z.string()).describe("List of specific job requirements").min(2).max(10),
+const JobDescriptionSchema = z.object({
+    jobDescription: z.string().min(2).max(2000).describe("Comprehensive overview of the job"),
 });
 
-type JobData = z.infer<typeof JobDataSchema>;
+
+type JobDescription = z.infer<typeof JobDescriptionSchema>;
+
+
+const InterviewGuidelinesSchema = z.object({
+    interviewGuidelines: z.string().min(2).max(2000).describe("Detailed guidelines for the interview")
+});
+
+type InterviewGuidelines = z.infer<typeof InterviewGuidelinesSchema>;
+
+const RequirementsSchema = z.object({
+    requirements: z.string().min(2).max(2000).describe("Specific technical and soft skill requirements")
+});
+
+type Requirements = z.infer<typeof RequirementsSchema>;
 
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { config } from "../config/config.js";
 
-export async function generateJobData(title: string): Promise<JobData> {
+export async function generateJobDescription({ jobTitle, jobRole, experienceLevel, workMode, skills }: {
+    jobTitle: string;
+    jobRole: string;
+    experienceLevel: string;
+    workMode: string;
+    skills: string[];
+}): Promise<JobDescription> {
     // Initialize the model (Gemini 1.5 Flash is recommended for stability)
     // 1. Initialize the model with your API Key
 
     const llm = new ChatGoogleGenerativeAI({
         model: "gemini-2.5-flash",
-        apiKey: "AIzaSyAZ5Hg95MIotin7ec4cGKq-KCPygSho9jw", // Get this from AI Studio
+        apiKey: config.aiModel.geminiApiKey, // Get this from AI Studio
         temperature: 0.7, // Adjust for creativity
     });
 
     // Bind the schema to the model
-    const structuredLlm = llm.withStructuredOutput(JobDataSchema);
+    const structuredLlm = llm.withStructuredOutput(JobDescriptionSchema);
 
     const prompt = `
-    Generate a professional and detailed job posting for the position: "${title}".
-    Provide realistic data for all fields including a high-quality job description, 
-    specific interview guidelines, and relevant skills/requirements.
-    Use current industry standards for salary ranges if not specified.
-  `;
+  Act as a Technical Recruiter. Create a professional JD for:
+  - Title: ${jobTitle}
+  - Role: ${jobRole}
+  - Experience: ${experienceLevel}
+  - Mode: ${workMode}
+  - Required Skills: ${skills}
+
+  Provide a concise Role Overview, Responsibilities, and Technical Requirements.
+  Ensure the tone matches the ${experienceLevel} seniority level.
+`;
 
     try {
         const result = await structuredLlm.invoke(prompt);
@@ -52,4 +64,64 @@ export async function generateJobData(title: string): Promise<JobData> {
     }
 }
 
-// generateJobData("Backend Developer");
+
+
+/**
+ * Generates structured interview guidelines and sample questions.
+ */
+export async function generateInterviewGuidelines({ jobTitle, experienceLevel, skills }: {
+    jobTitle: string;
+    experienceLevel: string;
+    skills: string[];
+}): Promise<InterviewGuidelines> {
+    const llm = new ChatGoogleGenerativeAI({
+        model: "gemini-1.5-flash", // Note: gemini-2.5 doesn't exist yet, sticking to stable
+        apiKey: config.aiModel.geminiApiKey,
+        temperature: 0.6,
+    });
+
+    const structuredLlm = llm.withStructuredOutput(InterviewGuidelinesSchema);
+
+    const prompt = `
+        Generate a 3-stage interview roadmap for a ${experienceLevel} ${jobTitle}.
+        Focus on these skills: ${skills.join(", ")}.
+        Include specific technical questions and behavioral benchmarks for this seniority level.
+    `;
+
+    try {
+        return await structuredLlm.invoke(prompt);
+    } catch (error) {
+        console.error("Failed to generate guidelines:", error);
+        throw new Error("Interview guidelines generation failed.");
+    }
+}
+
+/**
+ * Generates specific technical and soft skill requirements.
+ */
+export async function generateRequirements({ jobTitle, experienceLevel, skills }: {
+    jobTitle: string;
+    experienceLevel: string;
+    skills: string[];
+}): Promise<Requirements> {
+    const llm = new ChatGoogleGenerativeAI({
+        model: "gemini-1.5-flash",
+        apiKey: config.aiModel.geminiApiKey,
+        temperature: 0.5,
+    });
+
+    const structuredLlm = llm.withStructuredOutput(RequirementsSchema);
+
+    const prompt = `
+        List detailed job requirements for a ${experienceLevel} ${jobTitle}.
+        Base technical requirements on: ${skills.join(", ")}.
+        Include necessary soft skills, certifications, and educational expectations for this level.
+    `;
+
+    try {
+        return await structuredLlm.invoke(prompt);
+    } catch (error) {
+        console.error("Failed to generate requirements:", error);
+        throw new Error("Requirements generation failed.");
+    }
+}

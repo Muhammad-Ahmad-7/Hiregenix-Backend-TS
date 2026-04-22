@@ -13,7 +13,7 @@ import CandidateModel from "../models/candidate.model.js";
 import { InterviewModel } from "../models/interview.model.js";
 import { SavedJobModel } from "../models/save_job.model.js";
 import mongoose from "mongoose";
-import { generateJobData } from "../services/jobDataCreation.service.js";
+import { generateJobDescription } from "../services/jobDataCreation.service.js";
 
 
 
@@ -856,14 +856,12 @@ const getAllCompanyJobs = asyncHandler(async (req: Request, res: Response) => {
 })
 
 const generateJobDataUsingAI = asyncHandler(async (req: Request, res: Response) => {
-    const { jobTitle } = req.params;
-    if (!jobTitle) {
-        return responseHelper(res, 400, "Failed", "Job title is required.");
+    const { jobTitle, jobRole, experienceLevel, workMode, skills, type } = req.body;
+    let jobData = null;
+
+    if (type === "description") {
+        jobData = await generateJobDescription({ jobTitle, jobRole, experienceLevel, workMode, skills });
     }
-    if (Array.isArray(jobTitle)) {
-        return responseHelper(res, 400, "Failed", "Job title must be a string.");
-    }
-    const jobData = await generateJobData(jobTitle);
 
     if (!jobData) {
         return responseHelper(res, 500, "Failed", "Failed to generate job data.");
