@@ -156,6 +156,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
           sender,
           msg,
           isUserOnline,
+          replyingTo: replyingTo ?? null,
         });
       }
 
@@ -165,6 +166,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
         sender,
         msg,
         isUserOnline,
+        replyingTo: replyingTo ?? null,
       });
       console.log(data);
       io.emit("updateLastMessage", data);
