@@ -51,6 +51,9 @@ interface Config {
   aiModel: {
     geminiApiKey: string;
   };
+  pythonAi: {
+    url: string;
+  };
 }
 
 export const config: Config = {
@@ -96,5 +99,8 @@ export const config: Config = {
   },
   aiModel: {
     geminiApiKey: process.env.API_KEY!,
+  },
+  pythonAi: {
+    url: process.env.PYTHON_AI_URL || "http://localhost:8000",
   },
 };

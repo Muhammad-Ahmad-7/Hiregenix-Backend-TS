@@ -4,6 +4,7 @@ import {
   getCompanyProfile,
   getDashboardStats,
   getAllCompanies,
+  uploadCompanyKnowledgeBasePdf,
   updatedCompanyProfile,
 } from "../controllers/company.controller.js";
 import isLoggedIn from "../middlewares/auth.middleware.js";
@@ -18,6 +19,7 @@ import {
   updateJobSchema,
 } from "../validators/company.validator.js";
 import { generateJobDataUsingAI } from "../controllers/job.controller.js";
+import upload from "../middlewares/multer.middleware.js";
 
 const companyRouter = express.Router();
 
@@ -42,6 +44,14 @@ companyRouter.patch(
   isCompany,
   validateRequest(companyProfileUpdateSchema),
   updatedCompanyProfile,
+);
+
+companyRouter.post(
+  "/knowledge-base/pdf",
+  isLoggedIn,
+  isCompany,
+  upload.single("file"),
+  uploadCompanyKnowledgeBasePdf,
 );
 
 export default companyRouter;

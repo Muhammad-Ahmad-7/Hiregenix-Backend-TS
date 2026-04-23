@@ -18,6 +18,9 @@ export interface ICompany extends Document {
     ntnNumber: string;
     isDeleted?: string;
     isProfileCompleted: boolean;
+    knowledgeBasePdfUrl?: string | null;
+    knowledgeBaseQdrantCollection?: string | null;
+    knowledgeBaseUpdatedAt?: Date | null;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -89,7 +92,19 @@ const CompanySchema = new Schema<ICompany>({
     isProfileCompleted: {
         type: Boolean,
         default: false,
-    }
+    },
+    knowledgeBasePdfUrl: {
+        type: String,
+        default: null,
+    },
+    knowledgeBaseQdrantCollection: {
+        type: String,
+        default: null,
+    },
+    knowledgeBaseUpdatedAt: {
+        type: Date,
+        default: null,
+    },
 }, { timestamps: true });
 
 export const CompanyModel = mongoose.model<ICompany>("Company", CompanySchema);
