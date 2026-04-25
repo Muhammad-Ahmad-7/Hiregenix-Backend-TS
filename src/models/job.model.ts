@@ -21,7 +21,6 @@ export interface IJob extends Document {
     salaryRange?: {
         min?: number;
         max?: number;
-        currency?: string
     };
     isDeleted?: boolean;
     status?: "open" | "closed";
@@ -80,7 +79,7 @@ const JobSchema = new Schema<IJob>({
         },
         country: {
             type: String,
-            required: true
+            default: "Pakistan"
         }
     },
     salaryRange: {
