@@ -397,6 +397,329 @@ const getResumeParsedData = asyncHandler(
   },
 );
 
+const addResumeData = asyncHandler(async (req: Request, res: Response) => {
+  const candidate = await CandidateModel.findById(req.userId);
+  if (!candidate) {
+    return responseHelper(res, 404, "Failed", "Candidate not found.");
+  }
+  const resume = await ResumeModel.findById(candidate.resumeId?.toString());
+  if (!resume) {
+    return responseHelper(res, 404, "Failed", "Resume not found.");
+  }
+  const { type } = req.body;
+  if (type === "experience") {
+    const newExp = req.body.data;
+
+    if (Array.isArray(newExp)) {
+      resume.parsedData?.experience?.unshift(...newExp);
+    } else {
+      resume.parsedData?.experience?.unshift(newExp);
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Experience data added to resume successfully.",
+      {
+        data: {
+          resume,
+        },
+      },
+    );
+  }
+
+  if (type === "education") {
+    const newEdu = req.body.data;
+
+    if (Array.isArray(newEdu)) {
+      resume.parsedData?.education?.unshift(...newEdu);
+    } else {
+      resume.parsedData?.education?.unshift(newEdu);
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Education data added to resume successfully.",
+      {
+        data: {
+          resume,
+        },
+      },
+    );
+  }
+
+  if (type === "project") {
+    const newProj = req.body.data;
+
+    if (Array.isArray(newProj)) {
+      resume.parsedData?.projects?.unshift(...newProj);
+    } else {
+      resume.parsedData?.projects?.unshift(newProj);
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Projects data added to resume successfully.",
+      {
+        data: {
+          resume,
+        },
+      },
+    );
+  }
+
+  if (type === "certification") {
+    const newCert = req.body.data;
+    if (Array.isArray(newCert)) {
+      resume.parsedData?.certifications?.unshift(...newCert);
+    } else {
+      resume.parsedData?.certifications?.unshift(newCert);
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Certifications data added to resume successfully.",
+      {
+        data: {
+          resume,
+        },
+      },
+    );
+  }
+  return responseHelper(res, 400, "Failed", "Invalid type specified.");
+});
+
+const editResumeData = asyncHandler(async (req: Request, res: Response) => {
+  const candidate = await CandidateModel.findById(req.userId);
+  if (!candidate) {
+    return responseHelper(res, 404, "Failed", "Candidate not found.");
+  }
+  const resume = await ResumeModel.findById(candidate.resumeId?.toString());
+  if (!resume) {
+    return responseHelper(res, 404, "Failed", "Resume not found.");
+  }
+  const { type, _id } = req.body;
+
+  if (type === "experience") {
+    const { company, position, startDate, endDate, description } = req.body.data;
+
+    const updatedExperience = {
+      ...(company !== undefined ? { company } : {}),
+      ...(position !== undefined ? { position } : {}),
+      ...(startDate !== undefined ? { startDate } : {}),
+      ...(endDate !== undefined ? { endDate } : {}),
+      ...(description !== undefined ? { description } : {}),
+    };
+
+    if (resume.parsedData) {
+      resume.parsedData.experience = (resume.parsedData.experience ?? []).map((exp) => {
+        if ((exp as any)._id?.toString() === _id) {
+          return { ...exp, ...updatedExperience };
+        }
+        return exp;
+      });
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Experience data edited to resume successfully.",
+      {
+        data: {
+          resume,
+        },
+      },
+    );
+  }
+
+  if (type === "education") {
+    const { institution, degree, startYear, endYear } = req.body.data;
+    const updatedEducation = {
+      ...(institution !== undefined ? { institution } : {}),
+      ...(degree !== undefined ? { degree } : {}),
+      ...(startYear !== undefined ? { startYear } : {}),
+      ...(endYear !== undefined ? { endYear } : {}),
+    };
+    if (resume.parsedData) {
+      resume.parsedData.education = (resume.parsedData.education ?? []).map((edu) => {
+        if ((edu as any)._id?.toString() === _id) {
+          return { ...edu, ...updatedEducation };
+        }
+        return edu;
+      });
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Education data edited to resume successfully.",
+      {
+        data: {
+          resume,
+        },
+      },
+    );
+  }
+
+  if (type === "project") {
+    const { name, description, link, technologies } = req.body.data;
+    const updatedProject = {
+      ...(name !== undefined ? { name } : {}),
+      ...(description !== undefined ? {
+        description,
+      } : {}),
+      ...(link !== undefined ? { link } : {}),
+      ...(technologies !== undefined ? { technologies } : {}),
+    };
+    if (resume.parsedData) {
+      resume.parsedData.projects = (resume.parsedData.projects ?? []).map((proj) => {
+        if ((proj as any)._id?.toString() === _id) {
+          return { ...proj, ...updatedProject };
+        }
+        return proj;
+      });
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Project data edited to resume successfully.",
+      {
+        data: {
+          resume,
+        },
+      },
+    );
+  }
+  if (type === "certification") {
+    const { name, issuer, year } = req.body.data;
+    const updatedCertification = {
+      ...(name !== undefined ? { name } : {}),
+      ...(issuer !== undefined ? { issuer } : {}),
+      ...(year !== undefined ? { year } : {}),
+    };
+    if (resume.parsedData) {
+      resume.parsedData.certifications = (resume.parsedData.certifications ?? []).map((cert) => {
+        if ((cert as any)._id?.toString() === _id) {
+          return { ...cert, ...updatedCertification };
+        }
+        return cert;
+      });
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Certification data edited to resume successfully.",
+      {
+        data: {
+          resume,
+        },
+      },
+    );
+  }
+  return responseHelper(res, 400, "Failed", "Invalid type specified.");
+});
+
+const deleteResumeData = asyncHandler(async (req: Request, res: Response) => {
+  // Similar to editResumeData but filter out the item with the given _id instead of updating it
+  const candidate = await CandidateModel.findById(req.userId);
+  if (!candidate) {
+    return responseHelper(res, 404, "Failed", "Candidate not found.");
+  }
+
+  const resume = await ResumeModel.findById(candidate.resumeId?.toString());
+  if (!resume) {
+    return responseHelper(res, 404, "Failed", "Resume not found.");
+  }
+  const { type, _id } = req.body;
+  if (type === "experience") {
+    if (resume.parsedData) {
+      resume.parsedData.experience = (resume.parsedData.experience ?? []).filter((exp) => (exp as any)._id?.toString() !== _id);
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Experience data deleted from resume successfully.",
+      {
+        data: {
+          resume,
+        },
+      },
+    );
+  }
+
+  if (type === "education") {
+    if (resume.parsedData) {
+      resume.parsedData.education = (resume.parsedData.education ?? []).filter((edu) => (edu as any)._id?.toString() !== _id);
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Education data deleted from resume successfully.",
+      {
+        data: {
+          resume,
+        },
+      },
+    );
+  }
+
+  if (type === "project") {
+    if (resume.parsedData) {
+      resume.parsedData.projects = (resume.parsedData.projects ?? []).filter((proj) => (proj as any)._id?.toString() !== _id);
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Project data deleted from resume successfully.",
+      {
+        data: {
+          resume,
+        },
+      },
+    );
+  }
+
+  if (type === "certification") {
+    if (resume.parsedData) {
+      resume.parsedData.certifications = (resume.parsedData.certifications ?? []).filter((cert) => (cert as any)._id?.toString() !== _id);
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+
+      "Success",
+      "Certification data deleted from resume successfully.",
+      {
+
+        data: {
+          resume,
+        },
+      },
+    );
+  }
+  return responseHelper(res, 400, "Failed", "Invalid type specified.");
+});
+
 const getCandidateDashboardStats = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.userId;
@@ -457,4 +780,7 @@ export {
   getResumeParsedData,
   getCandidateProfileById,
   getCandidateDashboardStats,
+  addResumeData,
+  editResumeData,
+  deleteResumeData,
 };

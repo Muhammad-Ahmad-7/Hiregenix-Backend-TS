@@ -341,7 +341,7 @@ const getCandidateInterviewById = asyncHandler(
 
     const interview = await InterviewModel.findByIdAndUpdate(
       interviewId,
-      { status: "in-progress" }, // 1. The update object
+      { status: "scheduled" }, // 1. The update object
       { new: true, runValidators: true } // 2. Options: return the updated doc & validate
     )
       .populate("jobId", "title role workMode deadline")
