@@ -380,7 +380,7 @@ const getResumeParsedData = asyncHandler(
     }
     const resume = await ResumeModel.findById(candidate.resumeId?.toString());
     if (!resume) {
-      return responseHelper(res, 404, "Failed", "Resume not found.");
+      return responseHelper(res, 404, "Failed", "Resume not found. Please upload your resume first to complete your profile.");
     }
 
     return responseHelper(
@@ -404,7 +404,7 @@ const addResumeData = asyncHandler(async (req: Request, res: Response) => {
   }
   const resume = await ResumeModel.findById(candidate.resumeId?.toString());
   if (!resume) {
-    return responseHelper(res, 404, "Failed", "Resume not found.");
+    return responseHelper(res, 404, "Failed", "Resume not found. Please upload your resume first to complete your profile.");
   }
   const { type } = req.body;
   if (type === "experience") {
