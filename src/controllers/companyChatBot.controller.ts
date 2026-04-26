@@ -45,7 +45,10 @@ export async function companyChatBot(
   //   }
   // ── Call Gemini service ──────────────────────
   try {
-    const kbUrl = (company as any).knowledgeBasePdfUrl as string | null | undefined;
+    const kbUrl = (company as any).knowledgeBasePdfUrl as
+      | string
+      | null
+      | undefined;
     const kbCollection = (company as any).knowledgeBaseQdrantCollection as
       | string
       | null
@@ -55,10 +58,12 @@ export async function companyChatBot(
     // (This keeps the UX working while companies haven't uploaded PDFs.)
     const answer =
       kbUrl && kbCollection
-        ? (await getCompanyRagAnswer({
-            companyId: company._id.toString(),
-            query: query.trim(),
-          }))?.answer
+        ? (
+            await getCompanyRagAnswer({
+              companyId: company._id.toString(),
+              query: query.trim(),
+            })
+          )?.answer
         : `This company hasn't uploaded a knowledge-base PDF yet. I can still answer basic questions about ${company.companyName} (tech stack, location, contact info, hiring status).`;
 
     responseHelper(res, 200, "Success", "Response generated successfully.", {
