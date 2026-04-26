@@ -86,7 +86,7 @@ const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
     if (user.role === 'company') {
         const company = await CompanyModel.create({
             userId: user._id,
-            companyName: user.username
+            companyName: user.email.split('@')[0] + " Inc." // Placeholder company name based on email
         })
         if (!company) {
             return responseHelper(res, 500, "Failed", "Error creating company profile.")
