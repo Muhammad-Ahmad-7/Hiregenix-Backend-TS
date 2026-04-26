@@ -51,6 +51,11 @@ interface Config {
   aiModel: {
     geminiApiKey: string;
   };
+  google: {
+    clientId: string | undefined;
+    clientSecret: string | undefined;
+    redirectUri: string | undefined;
+  };
 }
 
 export const config: Config = {
@@ -96,5 +101,10 @@ export const config: Config = {
   },
   aiModel: {
     geminiApiKey: process.env.API_KEY!,
+  },
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    redirectUri: process.env.GOOGLE_REDIRECT_URI,
   },
 };

@@ -69,10 +69,12 @@ export async function generateJobDescription({ jobTitle, jobRole, experienceLeve
 /**
  * Generates structured interview guidelines and sample questions.
  */
-export async function generateInterviewGuidelines({ jobTitle, experienceLevel, skills }: {
+export async function generateInterviewGuidelines({ jobTitle, jobRole, experienceLevel, skills, workMode }: {
     jobTitle: string;
     experienceLevel: string;
+    jobRole: string;
     skills: string[];
+    workMode: string;
 }): Promise<InterviewGuidelines> {
     const llm = new ChatGoogleGenerativeAI({
         model: "gemini-1.5-flash", // Note: gemini-2.5 doesn't exist yet, sticking to stable
@@ -86,12 +88,12 @@ export async function generateInterviewGuidelines({ jobTitle, experienceLevel, s
         Generate a 3-stage interview roadmap for a ${experienceLevel} ${jobTitle}.
         Focus on these skills: ${skills.join(", ")}.
         Include specific technical questions and behavioral benchmarks for this seniority level.
+        Tailor the guidelines for a ${workMode} role, emphasizing remote collaboration skills if applicable.
     `;
 
     try {
         return await structuredLlm.invoke(prompt);
     } catch (error) {
-        console.error("Failed to generate guidelines:", error);
         throw new Error("Interview guidelines generation failed.");
     }
 }

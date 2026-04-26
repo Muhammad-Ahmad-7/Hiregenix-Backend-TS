@@ -1,5 +1,5 @@
 import express from "express";
-import { completeCandidateProfile, getCandidateDashboardStats, getCandidateProfile, getCandidateProfileById, getResumeParsedData, resumeParser, updateCandidateProfile } from "../controllers/candidate.controller.js";
+import { addResumeData, completeCandidateProfile, deleteResumeData, editResumeData, getCandidateDashboardStats, getCandidateProfile, getCandidateProfileById, getResumeParsedData, resumeParser, updateCandidateProfile } from "../controllers/candidate.controller.js";
 import upload from "../middlewares/multer.middleware.js";
 import isLoggedIn from "../middlewares/auth.middleware.js";
 import { isCandidate, isResumeAlreadyUploaded } from "../middlewares/candidate.middleware.js";
@@ -17,6 +17,9 @@ candidateRouter.patch("/update-profile", isLoggedIn, validateRequest(candidateUp
 candidateRouter.post("/resume", isLoggedIn, isResumeAlreadyUploaded, upload.single("file"), resumeParser);
 candidateRouter.get("/get-resume-parsed-data", isLoggedIn, getResumeParsedData);
 candidateRouter.get("/get-candidate-dashboard-stats", isLoggedIn, isCandidate, getCandidateDashboardStats);
+candidateRouter.post("/add-resume-data", isLoggedIn, addResumeData);
+candidateRouter.patch("/edit-resume-data", isLoggedIn, editResumeData);
+candidateRouter.delete("/delete-resume-data", isLoggedIn, deleteResumeData);
 
 export default candidateRouter;
 

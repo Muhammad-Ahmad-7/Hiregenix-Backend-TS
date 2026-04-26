@@ -19,7 +19,9 @@ export interface IInterview extends Document {
     | "missed"                // Scheduled but not attended, and job deadline passed
     | "no-show"               // Scheduled but not attended, job still open
     | "cancelled"             // Cancelled manually by candidate/company
-    | "expired";              // Job deadline crossed, and interview never scheduled or completed
+    | "expired"              // Job deadline crossed, and interview never scheduled or completed
+    | "rejected"             // Interview rejected after completion or during review
+    | "hired";
     questions: string[];
     totalQuestions: number;
     completedQuestions: number;
@@ -66,6 +68,8 @@ const InterviewSchema = new Schema<IInterview>(
                 "no-show",
                 "cancelled",
                 "expired",
+                "rejected",
+                "hired"
             ],
             default: "pending",
         },
