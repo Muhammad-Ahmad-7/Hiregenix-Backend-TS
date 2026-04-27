@@ -1,27 +1,53 @@
-import nodemailer from 'nodemailer';
-import fs from 'fs/promises';
-import path, { dirname } from 'path';
-import { config } from '../config/config.js';
-import { fileURLToPath } from 'url';
+import nodemailer from "nodemailer";
+import fs from "fs/promises";
+import path, { dirname } from "path";
+import { config } from "../config/config.js";
+import { fileURLToPath } from "url";
 
 export class EmailService {
-    // Create a transporter object using the default SMTP transport
-    private static transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: config.email.user,
-            pass: config.email.pass,
-        },
-        debug: true,
-        logger: true
-    });
+  // Create a transporter object using the default SMTP transport
+  private static transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: config.email.user,
+      pass: config.email.pass,
+    },
+    debug: true,
+    logger: true,
+  });
 
-    // Read and return the email template content from the specified file
-    private static async getTemplate(templateName: string): Promise<string> {
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = dirname(__filename);
-        const templatePath = path.join(__dirname, '../templates', `${templateName}.html`);
-        return await fs.readFile(templatePath, 'utf-8');
+  // Read and return the email template content from the specified file
+  private static async getTemplate(templateName: string): Promise<string> {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const templatePath = path.join(
+      __dirname,
+      "../templates",
+      `${templateName}.html`,
+    );
+    return await fs.readFile(templatePath, "utf-8");
+  }
+
+  // Replace variables in the template with actual values
+  private static replaceTemplateVariables(
+    template: string,
+    variables: Record<string, string>,
+  ): string {
+    return Object.entries(variables).reduce(
+      (acc, [key, value]) => acc.replace(new RegExp(`{{${key}}}`, "g"), value),
+      template,
+    );
+  }
+
+  // Verify the SMTP connection
+  static async verifyConnection(): Promise<boolean> {
+    try {
+      await this.transporter.verify();
+      console.log("SMTP connection verified successfully");
+      return true;
+    } catch (error) {
+      console.error("SMTP connection verification failed:", error);
+      return false;
     }
 
     // Replace variables in the template with actual values
@@ -103,20 +129,21 @@ export class EmailService {
             throw new Error('Failed to send password reset OTP email');
         }
     }
+  }
 
-    static async sendInterviewReminderEmail(
-        to: string,
-        candidateName: string,
-        candidatePhone: string,
-        jobRole: string,
-        jobExperienceLevel: string,
-        jobTitle: string,
-        companyName: string
-    ) {
-        try {
-            const template = await this.getTemplate('interviewReminder');
+  static async sendInterviewReminderEmail(
+    to: string,
+    candidateName: string,
+    candidatePhone: string,
+    jobRole: string,
+    jobExperienceLevel: string,
+    jobTitle: string,
+    companyName: string,
+  ) {
+    try {
+      const template = await this.getTemplate("interviewReminder");
 
-            const interviewGuideline = `
+      const interviewGuideline = `
         This is an AI-powered interview process.
 
         - You will join the interview online.
@@ -155,5 +182,5 @@ export class EmailService {
             throw new Error("Failed to send interview reminder email");
         }
     }
-
+  }
 }

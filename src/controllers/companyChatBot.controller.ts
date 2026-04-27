@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import responseHelper from "../utils/responseHelper.js";
 import CompanyModel from "../models/company.model.js";
-import { getCompanyChatAnswer } from "../services/chatBot.service.js";
+import { getCompanyRagAnswer } from "../services/companyRag.service.js";
 
 // ─────────────────────────────────────────────
 // POST /api/company-chat
@@ -45,7 +45,26 @@ export async function companyChatBot(
   //   }
   // ── Call Gemini service ──────────────────────
   try {
-    const answer = await getCompanyChatAnswer(query.trim(), company);
+    const kbUrl = (company as any).knowledgeBasePdfUrl as
+      | string
+      | null
+      | undefined;
+    const kbCollection = (company as any).knowledgeBaseQdrantCollection as
+      | string
+      | null
+      | undefined;
+
+    // If KB is not uploaded yet, fallback to basic company-info assistant.
+    // (This keeps the UX working while companies haven't uploaded PDFs.)
+    const answer =
+      kbUrl && kbCollection
+        ? (
+            await getCompanyRagAnswer({
+              companyId: company._id.toString(),
+              query: query.trim(),
+            })
+          )?.answer
+        : `This company hasn't uploaded a knowledge-base PDF yet. I can still answer basic questions about ${company.companyName} (tech stack, location, contact info, hiring status).`;
 
     responseHelper(res, 200, "Success", "Response generated successfully.", {
       data: { answer },

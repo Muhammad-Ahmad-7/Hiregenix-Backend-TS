@@ -6,9 +6,14 @@ import responseHelper from "../utils/responseHelper.js";
 import { JobModel } from "../models/job.model.js";
 import { TaskModel } from "../models/task.model.js";
 import { sendToQueue } from "../config/rabbitmq.js";
-import { JOB_DESCRIPTION_EMBEDDINGS_QUEUE } from "../utils/constant.js";
+import {
+  COMPANY_KB_EMBEDDINGS_QUEUE,
+  JOB_DESCRIPTION_EMBEDDINGS_QUEUE,
+} from "../utils/constant.js";
 import { qdrantClient } from "../server.js";
 import { InterviewModel } from "../models/interview.model.js";
+import cloudinary from "../config/cloudinary.js";
+import fs from "fs";
 
 const completeCompanyProfile = asyncHandler(
   async (req: Request, res: Response) => {
@@ -175,6 +180,27 @@ const getCompanyProfile = asyncHandler(async (req: Request, res: Response) => {
   );
 });
 
+const getAllCompanies = asyncHandler(async (req: Request, res: Response) => {
+  const companies = await CompanyModel.find({
+    isDeleted: false,
+    isProfileCompleted: true,
+  })
+    .select("companyName logoUrl contactEmail userId")
+    .lean();
+
+  return responseHelper(
+    res,
+    200,
+    "Success",
+    "Companies fetched successfully.",
+    {
+      data: {
+        companies,
+      },
+    },
+  );
+});
+
 const updatedCompanyProfile = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.userId;
@@ -204,17 +230,17 @@ const updatedCompanyProfile = asyncHandler(
       website,
     } = req.body;
 
-    if (companyName) {
-      const findCompanyByName = await CompanyModel.findOne({ companyName });
-      if (findCompanyByName) {
-        return responseHelper(
-          res,
-          400,
-          "Failed",
-          "Company with the same already exist.",
-        );
-      }
-    }
+    // if (companyName) {
+    //   const findCompanyByName = await CompanyModel.findOne({ companyName });
+    //   if (findCompanyByName) {
+    //     return responseHelper(
+    //       res,
+    //       400,
+    //       "Failed",
+    //       "Company with the same already exist.",
+    //     );
+    //   }
+    // }
 
     const updatedCompany = await CompanyModel.findByIdAndUpdate(
       existingCompany._id,
@@ -262,9 +288,68 @@ const updatedCompanyProfile = asyncHandler(
   },
 );
 
+const uploadCompanyKnowledgeBasePdf = asyncHandler(
+  async (req: Request, res: Response) => {
+    const companyProfileId = req.userId; // company profile _id (from token)
+    if (!companyProfileId) {
+      return responseHelper(res, 401, "Failed", "Unauthorized.");
+    }
+
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (!file) {
+      return responseHelper(res, 400, "Failed", "No file uploaded.");
+    }
+
+    const result = await cloudinary.uploader.upload(file.path, {
+      resource_type: "auto",
+    });
+    fs.unlinkSync(file.path);
+
+    const pdfUrl = result.secure_url;
+    const collectionName = `company_kb_${companyProfileId}`;
+
+    const updatedCompany = await CompanyModel.findByIdAndUpdate(
+      companyProfileId,
+      {
+        knowledgeBasePdfUrl: pdfUrl,
+        knowledgeBaseQdrantCollection: collectionName,
+        knowledgeBaseUpdatedAt: new Date(),
+      },
+      { new: true },
+    );
+
+    if (!updatedCompany) {
+      return responseHelper(res, 404, "Failed", "Company not found.");
+    }
+
+    const task = await TaskModel.create({
+      userId: req.user._id,
+      type: "company_kb_embeddings",
+      payload: {
+        companyId: companyProfileId,
+        pdfUrl,
+        collectionName,
+      },
+      status: "pending",
+    });
+
+    sendToQueue(COMPANY_KB_EMBEDDINGS_QUEUE, task._id.toString());
+
+    return responseHelper(res, 200, "Success", "Knowledge base uploaded.", {
+      data: {
+        pdfUrl,
+        collectionName,
+        taskId: task._id,
+      },
+    });
+  },
+);
+
 export {
   completeCompanyProfile,
   getDashboardStats,
   getCompanyProfile,
+  getAllCompanies,
   updatedCompanyProfile,
+  uploadCompanyKnowledgeBasePdf,
 };

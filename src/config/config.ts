@@ -11,6 +11,8 @@ dotenv.config({ path: path.join(__dirname, "../../.env") });
 
 interface Config {
   port: string | number;
+  HF_MODEL: string;
+  HF_TOKEN:string;
   mongodb: {
     uri: string;
   };
@@ -57,10 +59,15 @@ interface Config {
     clientSecret: string | undefined;
     redirectUri: string | undefined;
   };
+  pythonAi: {
+    url: string;
+  };
 }
 
 export const config: Config = {
   port: process.env.PORT || 8000,
+  HF_MODEL: process.env.HF_MODEL ?? "sentence-transformers/all-MiniLM-L6-v2",
+  HF_TOKEN: process.env.HF_TOKEN ?? "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",
   mongodb: {
     uri: process.env.MONGODB_URI || "mongodb://localhost:27017/mydatabase",
   },
@@ -108,5 +115,8 @@ export const config: Config = {
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     redirectUri: process.env.GOOGLE_REDIRECT_URI,
+  },
+  pythonAi: {
+    url: process.env.PYTHON_AI_URL || "http://localhost:8000",
   },
 };
