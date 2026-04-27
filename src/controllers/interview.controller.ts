@@ -11,11 +11,26 @@ import { sendToQueue } from "../config/rabbitmq.js";
 import CandidateModel from "../models/candidate.model.js";
 import compareFaces from "../services/faceVerification.service.js";
 import { DateTime } from "luxon";
+import generateQuestionsForInterview from "../services/interviewQuestionsGeneration.service.js";
 
 const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   // Implementation for scheduling interview
 
   const userId = req.userId;
+
+  if (!userId) {
+    return responseHelper(res, 401, "Failed", "Unauthorized access.");
+  }
+
+  const candidate = await CandidateModel.findById(userId);
+
+  if (!candidate) {
+    return responseHelper(res, 404, "Failed", "Candidate not found.");
+  }
+
+  if (!candidate.resumeId) {
+    return responseHelper(res, 400, "Failed", "Candidate profile is incomplete. Resume not found.");
+  }
 
   const { jobId } = req.params;
   const { scheduledDate } = req.body;
@@ -114,6 +129,28 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
     );
   }
 
+  // No existing interview, create a new one
+  // Generate questions for the interview based on the job requirements and candidate profile 
+
+  const { title, role, experienceLevel, interviewGuideline, requiredSkills, requirements } = job;
+
+  const { resumeId } = candidate;
+
+  const questions = await generateQuestionsForInterview({ title, role, experienceLevel, interviewGuideline, requiredSkills, requirements, resumeId: resumeId.toString() });
+
+  if (!questions || questions.length === 0) {
+    return responseHelper(res, 500, "Failed", "Failed to generate interview questions.");
+  }
+
+  const predefinedQuestions = [
+    `Hi ${candidate.fullName}, can you briefly introduce yourself and your recent work?`,
+    `That's great to hear ${candidate.fullName}, how would you describe your professional journey?`,
+    `give me a quick overview of your skills and experience.`
+  ];
+
+  const interviewQuestions = [...predefinedQuestions, ...questions.questions];
+
+
   const interview = await InterviewModel.create({
     candidateId: userId,
     jobId: job._id,
@@ -121,6 +158,8 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
     type: "live",
     scheduledDate: scheduledDate ? scheduledDateUTC : undefined,
     status: scheduledDate ? "scheduled" : "pending",
+    questions: interviewQuestions,
+    length: interviewQuestions.length
   });
 
   if (!interview) {

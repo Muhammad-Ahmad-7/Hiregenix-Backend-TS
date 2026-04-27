@@ -197,4 +197,65 @@ const googleAuth = asyncHandler(async (req: Request, res: Response) => {
     })
 });
 
-export { login, signup, verifyEmail, googleAuth };
+const forgetPassword = asyncHandler(async (req: Request, res: Response) => {
+    // Get the user email from the request body
+
+    const { email } = req.body;
+
+    // Check if the user exists in the database
+    const user = await User.findOne({ email });
+    if (!user) {
+        return responseHelper(res, 404, "Failed", "User not found");
+    }
+    // Generate a password reset 4 digit otp and store it in the database with an expiration time of 15 minutes
+    const resetOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    user.resetPasswordOtp = resetOtp;
+    user.resetPasswordOtpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+    await user.save();
+    // Send the otp to the user's email
+    try {
+        await EmailService.sendPasswordResetOtp(email, "User", resetOtp);
+        console.log('Password reset OTP email sent successfully.');
+        return responseHelper(res, 200, "Success", "Password reset OTP sent to your email.");
+    } catch (emailError) {
+        console.error('Failed to send password reset OTP email:', emailError);
+        return responseHelper(res, 500, "Failed", "Failed to send password reset OTP. Please try again later.");
+    }
+});
+
+const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+
+    // Get the user email, otp and new password from the request body
+    const { email, otp, newPassword } = req.body;
+
+
+    // Find the user by email
+    const user = await User.findOne({ email });
+    // Check if the user exists
+    if (!user) {
+        return responseHelper(res, 404, "Failed", "User not found");
+    }
+
+    // Social auth users cannot reset password using OTP
+
+    if (user.authProvider !== "local") {
+        return responseHelper(res, 400, "Failed", "Social login accounts cannot reset passwords via OTP.");
+    }
+
+    // Check if the OTP is valid and not expired
+
+    const isOtpValid = user.resetPasswordOtp === otp && user.resetPasswordOtpExpires && user.resetPasswordOtpExpires > new Date();
+
+    if (!isOtpValid) {
+        return responseHelper(res, 400, "Failed", "Invalid or expired OTP");
+    }
+
+    // If valid, update the user's password and clear the OTP fields
+    user.password = newPassword // Only set password for local auth users
+    user.resetPasswordOtp = null;
+    user.resetPasswordOtpExpires = null;
+    await user.save();
+    // Return a success response
+    return responseHelper(res, 200, "Success", "Password reset successful. You can now log in with your new password.");
+});
+export { login, signup, verifyEmail, googleAuth, forgetPassword, resetPassword };

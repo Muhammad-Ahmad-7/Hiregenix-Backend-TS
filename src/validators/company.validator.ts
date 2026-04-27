@@ -43,6 +43,7 @@ export const jobCreationSchema = z.object({
     description: z.string().min(2),
 
     requiredSkills: z.array(z.string().min(1)),
+    requirements: z.array(z.string().min(1)),
 
 
     workMode: z.enum(["full-time", "part-time", "remote"]),
@@ -57,7 +58,6 @@ export const jobCreationSchema = z.object({
         max: z.number().min(0),
     }),
 
-    requirements: z.array(z.string().min(2)),
     deadline: z.coerce.date(),
 
 })

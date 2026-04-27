@@ -13,7 +13,7 @@ export interface IJob extends Document {
     aiSummary?: string;
     embeddingSynced?: boolean;
     qdrantId?: string;
-    requirements?: string[];
+    requirements: string[];
     location?: {
         city?: string;
         country?: string;
@@ -61,7 +61,7 @@ const JobSchema = new Schema<IJob>({
     },
     requirements: {
         type: [String],
-        required: false
+        required: true
     },
     workMode: {
         type: String,
