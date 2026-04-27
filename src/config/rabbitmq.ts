@@ -1,12 +1,5 @@
 import amqb from "amqplib";
-import {
-  RESUME_QUEUE,
-  SPEECH_TO_TEXT_QUEUE,
-  CANDIDATE_PROFILE_EMBEDDINGS_QUEUE,
-  JOB_DESCRIPTION_EMBEDDINGS_QUEUE,
-  COMPANY_KB_EMBEDDINGS_QUEUE,
-  LIVENESS_CHECK_QUEUE,
-} from "../utils/constant.js";
+import { RESUME_QUEUE, SPEECH_TO_TEXT_QUEUE, CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, JOB_DESCRIPTION_EMBEDDINGS_QUEUE, LIVENESS_CHECK_QUEUE, SEND_HIRING_EMAIL_QUEUE, SEND_REJECTION_EMAIL_QUEUE, COMPANY_KB_EMBEDDINGS_QUEUE } from "../utils/constant.js";
 
 export let channel: amqb.Channel | null = null;
 
@@ -16,6 +9,7 @@ export default async function connectToRabbitMQ() {
       process.env.RABBITMQ_URL || "amqp://localhost",
     );
     channel = await connection.createChannel();
+
     const mainArgs = {
       "x-dead-letter-exchange": "worker_failure_exchange",
       "x-dead-letter-routing-key": "stt.failure",
@@ -40,27 +34,26 @@ export default async function connectToRabbitMQ() {
       "x-dead-letter-exchange": "worker_failure_exchange",
       "x-dead-letter-routing-key": "resume_analysis.failure",
     };
-    await channel.assertQueue(RESUME_QUEUE, {
-      durable: true,
-      arguments: mainArgsForResumeQueue,
-    });
-    await channel.assertQueue(SPEECH_TO_TEXT_QUEUE, {
-      durable: true,
-      arguments: mainArgs,
-    });
-    await channel.assertQueue(CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, {
-      durable: true,
-      arguments: mainArgsForCandidateProfileEmbeddingsQueue,
-    });
-    await channel.assertQueue(JOB_DESCRIPTION_EMBEDDINGS_QUEUE, {
-      durable: true,
-      arguments: mainArgsForJobDescriptionEmbeddingsQueue,
-    });
-    await channel.assertQueue(COMPANY_KB_EMBEDDINGS_QUEUE, {
-      durable: true,
-      arguments: mainArgsForCompanyKbEmbeddingsQueue,
-    });
+
+    const mainArgsForSendHiringEmailQueue = {
+      "x-dead-letter-exchange": "worker_failure_exchange",
+      "x-dead-letter-routing-key": "send_hiring_email.failure",
+    };
+
+    const mainArgsForSendRejectionEmailQueue = {
+      "x-dead-letter-exchange": "worker_failure_exchange",
+      "x-dead-letter-routing-key": "send_rejection_email.failure",
+    };
+
+    await channel.assertQueue(RESUME_QUEUE, { durable: true, arguments: mainArgsForResumeQueue });
+    await channel.assertQueue(SPEECH_TO_TEXT_QUEUE, { durable: true, arguments: mainArgs });
+    await channel.assertQueue(CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, { durable: true, arguments: mainArgsForCandidateProfileEmbeddingsQueue });
+    await channel.assertQueue(JOB_DESCRIPTION_EMBEDDINGS_QUEUE, { durable: true, arguments: mainArgsForJobDescriptionEmbeddingsQueue });
+    await channel.assertQueue(COMPANY_KB_EMBEDDINGS_QUEUE, { durable: true, arguments: mainArgsForCompanyKbEmbeddingsQueue });
     await channel.assertQueue(LIVENESS_CHECK_QUEUE, { durable: true });
+    await channel.assertQueue(SEND_HIRING_EMAIL_QUEUE, { durable: true, arguments: mainArgsForSendHiringEmailQueue });
+    await channel.assertQueue(SEND_REJECTION_EMAIL_QUEUE, { durable: true, arguments: mainArgsForSendRejectionEmailQueue });
+
     console.log("Connected to RabbitMQ");
     return channel;
   } catch (error) {

@@ -52,6 +52,12 @@ interface Config {
   };
   aiModel: {
     geminiApiKey: string;
+    grokApiKey: string;
+  };
+  google: {
+    clientId: string | undefined;
+    clientSecret: string | undefined;
+    redirectUri: string | undefined;
   };
   pythonAi: {
     url: string;
@@ -103,6 +109,12 @@ export const config: Config = {
   },
   aiModel: {
     geminiApiKey: process.env.API_KEY!,
+    grokApiKey: process.env.GROQ_API_KEY!,
+  },
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    redirectUri: process.env.GOOGLE_REDIRECT_URI,
   },
   pythonAi: {
     url: process.env.PYTHON_AI_URL || "http://localhost:8000",

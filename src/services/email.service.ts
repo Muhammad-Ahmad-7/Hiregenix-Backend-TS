@@ -49,65 +49,85 @@ export class EmailService {
       console.error("SMTP connection verification failed:", error);
       return false;
     }
-  }
 
-  // Send a verification email to the specified recipient
-  static async sendVerificationEmail(
-    to: string,
-    name: string,
-    verificationToken: string,
-  ): Promise<void> {
-    try {
-      const template = await this.getTemplate("verifyEmail");
-      const verificationLink = `${config.frontend.url}/verify-email?token=${verificationToken}`;
-
-      const html = this.replaceTemplateVariables(template, {
-        name,
-        verificationLink,
-      });
-
-      const mailOptions = {
-        from: `"hiregenX" <${config.email.user}>`,
-        to,
-        subject: "Verify Your Email",
-        html,
-      };
-
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log("Verification email sent successfully:", info.messageId);
-    } catch (error) {
-      console.error("Error sending verification email:", error);
-      throw new Error("Failed to send verification email");
+    // Replace variables in the template with actual values
+    private static replaceTemplateVariables(template: string, variables: Record<string, string>): string {
+        return Object.entries(variables).reduce(
+            (acc, [key, value]) => acc.replace(new RegExp(`{{${key}}}`, 'g'), value),
+            template
+        );
     }
-  }
 
-  // Send a password reset email to the specified recipient
-  static async sendPasswordResetEmail(
-    to: string,
-    name: string,
-    resetToken: string,
-  ): Promise<void> {
-    try {
-      const template = await this.getTemplate("resetPassword");
-      const resetLink = `${config.frontend.url}/reset-password?token=${resetToken}`;
+    // Verify the SMTP connection
+    static async verifyConnection(): Promise<boolean> {
+        try {
+            await this.transporter.verify();
+            console.log('SMTP connection verified successfully');
+            return true;
+        } catch (error) {
+            console.error('SMTP connection verification failed:', error);
+            return false;
+        }
+    }
 
-      const html = this.replaceTemplateVariables(template, {
-        name,
-        resetLink,
-      });
+    // Send a verification email to the specified recipient
+    static async sendVerificationEmail(
+        to: string,
+        name: string,
+        verificationToken: string
+    ): Promise<void> {
+        try {
+            const template = await this.getTemplate('verifyEmail');
+            const verificationLink = `${config.frontend.url}/verify-email?token=${verificationToken}`;
 
-      const mailOptions = {
-        from: `"FredAbod" <${config.email.user}>`,
-        to,
-        subject: "Reset Your Password",
-        html,
-      };
+            const html = this.replaceTemplateVariables(template, {
+                name,
+                verificationLink,
+            });
 
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log("Password reset email sent successfully:", info.messageId);
-    } catch (error) {
-      console.error("Error sending password reset email:", error);
-      throw new Error("Failed to send password reset email");
+            const mailOptions = {
+                from: `"Hiregenix" <${config.email.user}>`,
+                to,
+                subject: 'Verify Your Email',
+                html,
+            };
+
+            const info = await this.transporter.sendMail(mailOptions);
+            console.log('Verification email sent successfully:', info.messageId);
+        } catch (error) {
+            console.error('Error sending verification email:', error);
+            throw new Error('Failed to send verification email');
+        }
+    }
+
+    // Send a password reset email to the specified recipient
+    static async sendPasswordResetOtp(
+        to: string,
+        name: string,
+        resetOtp: string
+    ): Promise<void> {
+        try {
+            const template = await this.getTemplate('resetPassword');
+
+            const html = this.replaceTemplateVariables(template, {
+                name,
+                resetOtp,
+                year: new Date().getFullYear().toString()
+            });
+
+            const mailOptions = {
+                from: `"Hiregenix" <${config.email.user}>`,
+                to,
+                subject: 'Reset Your Password',
+                html,
+            };
+
+            const info = await this.transporter.sendMail(mailOptions);
+            console.log('Password reset OTP email sent successfully:', info.messageId);
+        } catch (error) {
+            console.error('Error sending password reset OTP email:', error);
+            throw new Error('Failed to send password reset OTP email');
+        }
     }
   }
 
@@ -136,32 +156,31 @@ export class EmailService {
         - Once the report is generated, you can view it on your dashboard.
         `;
 
-      const html = this.replaceTemplateVariables(template, {
-        candidateName,
-        candidatePhone,
-        jobRole,
-        jobExperienceLevel,
-        jobTitle,
-        companyName,
-        interviewGuideline,
-        year: new Date().getFullYear().toString(),
-      });
+            const html = this.replaceTemplateVariables(template, {
+                candidateName,
+                candidatePhone,
+                jobRole,
+                jobExperienceLevel,
+                jobTitle,
+                companyName,
+                interviewGuideline,
+                year: new Date().getFullYear().toString()
+            });
 
-      const mailOptions = {
-        from: `"Hiregenx" <${config.email.user}>`,
-        to,
-        subject: `Reminder: Interview for ${jobTitle}`,
-        html,
-      };
+            const mailOptions = {
+                from: `"Hiregenix" <${config.email.user}>`,
+                to,
+                subject: `Reminder: Interview for ${jobTitle}`,
+                html,
+            };
 
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log(
-        "Interview reminder email sent successfully:",
-        info.messageId,
-      );
-    } catch (error) {
-      console.error("Error sending interview reminder email:", error);
-      throw new Error("Failed to send interview reminder email");
+            const info = await this.transporter.sendMail(mailOptions);
+            console.log('Interview reminder email sent successfully:', info.messageId);
+
+        } catch (error) {
+            console.error("Error sending interview reminder email:", error);
+            throw new Error("Failed to send interview reminder email");
+        }
     }
   }
 }

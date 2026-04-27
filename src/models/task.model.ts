@@ -2,7 +2,7 @@ import mongoose, { Document, Schema, Types } from "mongoose";
 
 export interface ITask extends Document {
     userId: Types.ObjectId;
-    type: "resume_parsing" | "profile_enhancement" | "resume_feedback" | "interview_prep";
+    type: "resume_parsing" | "profile_enhancement" | "resume_feedback" | "interview_prep" | "send_hiring_email" | "candidate_profile_embeddings" | "job_description_embeddings" | "job_recommendation" | "speech_to_text" | "audio_analysis" | "video_analysis" | "llm_evaluation" | "liveness_check" | "face_capture" | "send_rejection_email";
     payload: Record<string, any>;  // flexible
     status: "pending" | "processing" | "completed" | "failed";
     retryCount: number;
@@ -18,7 +18,7 @@ const TaskSchema = new Schema<ITask>(
         type: {
             type: String,
             enum: ["resume_parsing", "profile_enhancement", "resume_feedback", "interview_prep", "candidate_profile_embeddings", "job_description_embeddings", "job_recommendation", "speech_to_text",
-                "audio_analysis", "video_analysis", "llm_evaluation", "liveness_check", "face_capture", "company_kb_embeddings"],
+                "audio_analysis", "video_analysis", "llm_evaluation", "liveness_check", "face_capture", "send_hiring_email", "send_rejection_email","company_kb_embeddings"],
             required: true,
         },
         payload: { type: Schema.Types.Mixed, required: true }, // flexible JSON

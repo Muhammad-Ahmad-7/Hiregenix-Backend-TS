@@ -13,7 +13,7 @@ import CandidateModel from "../models/candidate.model.js";
 import { InterviewModel } from "../models/interview.model.js";
 import { SavedJobModel } from "../models/save_job.model.js";
 import mongoose from "mongoose";
-import { generateJobData } from "../services/jobDataCreation.service.js";
+import { generateInterviewGuidelines, generateJobDescription, generateRequirements } from "../services/jobDataCreation.service.js";
 
 
 
@@ -32,7 +32,6 @@ const createJob = asyncHandler(async (req: Request, res: Response) => {
         location,
         salaryRange,
         requirements,
-        status,
         deadline
     } = req.body;
 
@@ -55,7 +54,6 @@ const createJob = asyncHandler(async (req: Request, res: Response) => {
         location,
         salaryRange,
         requirements,
-        status,
         companyId,
         deadline
     })
@@ -255,17 +253,6 @@ const updateJobById = asyncHandler(async (req: Request, res: Response) => {
     const companyId = existingCompany._id;
 
     const {
-        title,
-        role,
-        interviewGuideline,
-        experienceLevel,
-        description,
-        requiredSkills,
-        workMode,
-        location,
-        salaryRange,
-        requirements,
-        status,
         deadline
     } = req.body;
 
@@ -277,35 +264,34 @@ const updateJobById = asyncHandler(async (req: Request, res: Response) => {
 
     // Build update object using previous values if not provided
     const updatedFields = {
-        title: title ?? job.title,
-        role: role ?? job.role,
-        interviewGuideline: interviewGuideline ?? job.interviewGuideline,
-        experienceLevel: experienceLevel ?? job.experienceLevel,
-        description: description ?? job.description,
-        requiredSkills: requiredSkills ?? job.requiredSkills,
-        workMode: workMode ?? job.workMode,
-        location: location ?? job.location,
-        salaryRange: salaryRange ?? job.salaryRange,
-        requirements: requirements ?? job.requirements,
-        status: status ?? job.status,
         deadline: deadline ?? job.deadline,
         qdrantId: null,
     };
 
 
     if (job.qdrantId !== null) {
-        const result = await qdrantClient.delete(
+        const find = await qdrantClient.retrieve(
             "job",
             {
-                points: [
-                    job?.qdrantId as string
-                ],
-                wait: true,
-            },
+                ids: [job.qdrantId as string]
+            }
         )
+        if (!find) {
+            console.log("Qdrant document not found for this job. It may have been already deleted or not created properly.")
+        } else {
+            const result = await qdrantClient.delete(
+                "job",
+                {
+                    points: [
+                        job?.qdrantId as string
+                    ],
+                    wait: true,
+                },
+            )
 
-        if (result.status !== "completed") {
-            console.log("Job deleted from mongodb but not from qdrant db.")
+            if (result.status !== "completed") {
+                console.log("Job deleted from mongodb but not from qdrant db.")
+            }
         }
     }
 
@@ -344,6 +330,12 @@ const deleteJob = asyncHandler(async (req: Request, res: Response) => {
 
     if (!job) {
         return responseHelper(res, 400, "Failed", "Job not found.");
+    }
+
+    const interviews = await InterviewModel.find({ jobId: job._id });
+
+    if (interviews && interviews.length > 0) {
+        return responseHelper(res, 400, "Failed", "Cannot delete job with existing interviews.");
     }
 
     if (job.isDeleted) {
@@ -856,14 +848,20 @@ const getAllCompanyJobs = asyncHandler(async (req: Request, res: Response) => {
 })
 
 const generateJobDataUsingAI = asyncHandler(async (req: Request, res: Response) => {
-    const { jobTitle } = req.params;
-    if (!jobTitle) {
-        return responseHelper(res, 400, "Failed", "Job title is required.");
+    const { jobTitle, jobRole, experienceLevel, workMode, skills, type } = req.body;
+    let jobData = null;
+
+    if (type === "description") {
+        jobData = await generateJobDescription({ jobTitle, jobRole, experienceLevel, workMode, skills });
     }
-    if (Array.isArray(jobTitle)) {
-        return responseHelper(res, 400, "Failed", "Job title must be a string.");
+
+    if (type === "interviewGuideline") {
+        jobData = await generateInterviewGuidelines({ jobTitle, jobRole, experienceLevel, workMode, skills });
     }
-    const jobData = await generateJobData(jobTitle);
+
+    if (type === "requirements") {
+        jobData = await generateRequirements({ jobTitle, experienceLevel, skills });
+    }
 
     if (!jobData) {
         return responseHelper(res, 500, "Failed", "Failed to generate job data.");

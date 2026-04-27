@@ -43,6 +43,7 @@ export const jobCreationSchema = z.object({
     description: z.string().min(2),
 
     requiredSkills: z.array(z.string().min(1)),
+    requirements: z.array(z.string().min(1)),
 
 
     workMode: z.enum(["full-time", "part-time", "remote"]),
@@ -50,16 +51,13 @@ export const jobCreationSchema = z.object({
 
     location: z.object({
         city: z.string().min(2).max(100),
-        country: z.string().min(2).max(100),
     }),
 
     salaryRange: z.object({
         min: z.number().min(0),
-        max: z.number(),
-        currency: z.string().min(2).max(10),
+        max: z.number().min(0),
     }),
 
-    requirements: z.array(z.string().min(2)),
     deadline: z.coerce.date(),
 
 })
@@ -73,37 +71,6 @@ export const getJobByIdSchema = z.object({
 })
 
 export const updateJobSchema = z.object({
-    title: z.optional(z.string().min(2).max(100)),
-    role: z.optional(z.string().min(2).max(100)),
-    interviewGuideline: z.optional(z.string().min(2).max(500)),
-
-    experienceLevel: z.optional(z.enum(["entry", "mid", "senior"])),
-
-    description: z.optional(z.string().min(2).max(500)),
-
-    requiredSkills: z.optional(z.array(z.string().min(2).max(20))),
-
-
-    workMode: z.optional(z.enum(["full-time", "part-time", "remote"])),
-
-
-    location: z.optional(
-        z.object({
-            city: z.string().min(2).max(100),
-            country: z.string().min(2).max(100),
-        })
-    ),
-
-    salaryRange: z.optional(
-        z.object({
-            min: z.number(),
-            max: z.number(),
-            currency: z.string().min(2).max(10),
-        })
-    ),
-
-    requirements: z.optional(z.array(z.string().min(2).max(500))),
-
     deadline: z.coerce.date()
 
 })
@@ -111,3 +78,13 @@ export const updateJobSchema = z.object({
 export const generateJobDataSchema = z.object({
     jobTitle: z.string().min(2).max(100),
 })
+
+
+export const generateJobDataUsingAISchema = z.object({
+    jobTitle: z.string().min(2).max(100),
+    jobRole: z.string().min(2).max(100),
+    experienceLevel: z.enum(["entry", "mid", "senior"]),
+    workMode: z.enum(["full-time", "part-time", "remote"]),
+    skills: z.array(z.string().min(1).max(100)),
+    type: z.enum(["requirements", "interviewGuideline", "description"])
+});

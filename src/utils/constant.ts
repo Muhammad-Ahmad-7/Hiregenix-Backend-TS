@@ -12,5 +12,7 @@ export const VIDEO_ANALYSIS_QUEUE = "video_analysis"
 export const LLM_EVALUATION_QUEUE = "llm_evaluation"
 export const LIVENESS_CHECK_QUEUE = "liveness_check"
 export const FACE_CAPTURE_QUEUE = "face_capture"
+export const SEND_HIRING_EMAIL_QUEUE = "send_hiring_email"
+export const SEND_REJECTION_EMAIL_QUEUE = "send_rejection_email"
 
 
