@@ -75,18 +75,22 @@ const InterviewSchema = new Schema<IInterview>(
         },
         questions: {
             type: [String],
-            // TODO: This one needs to be changed
             default: [
-                "Define 'Idempotency' in the context of HTTP methods and why it matters for API design.",
-                "What is a deadlock in a database, and how can a developer prevent one from occurring.",
-                "Explain the concept of 'Horizontal Scaling' versus 'Vertical Scaling' for a server.",
-                "What is the purpose of a Message Queue like RabbitMQ or Kafka in a distributed system?",
-                "What is a 'Rate Limiter' and why is it important for public-facing APIs?",
+                "Tell me about a recent challenge you solved.",
+                "What's something you failed at recently?",
+                "How do you handle tight deadlines?",
+                "Describe a time you disagreed with a teammate.",
+                "How do you prioritize your work?",
+                "How do you approach a completely new problem?",
+                "What do you do when you're stuck?",
+                "How do you break down complex tasks?",
+                "How do you decide between multiple solutions?",
+                "What does ownership mean to you?",
             ],
         },
         totalQuestions: {
             type: Number,
-            default: 5, // TODO: This one needs to be changed
+            default: 10,
         },
         completedQuestions: {
             type: Number,

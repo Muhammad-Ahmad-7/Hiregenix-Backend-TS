@@ -50,6 +50,7 @@ interface Config {
   };
   aiModel: {
     geminiApiKey: string;
+    grokApiKey: string;
   };
   google: {
     clientId: string | undefined;
@@ -101,6 +102,7 @@ export const config: Config = {
   },
   aiModel: {
     geminiApiKey: process.env.API_KEY!,
+    grokApiKey: process.env.GROQ_API_KEY!,
   },
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID,
