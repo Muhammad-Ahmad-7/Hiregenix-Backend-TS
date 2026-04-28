@@ -150,6 +150,9 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
 
   const interviewQuestions = [...predefinedQuestions, ...questions.questions];
 
+  console.log("Interview Questions", interviewQuestions);
+  console.log("length of interview questions", interviewQuestions.length);
+
 
   const interview = await InterviewModel.create({
     candidateId: userId,
@@ -159,8 +162,10 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
     scheduledDate: scheduledDate ? scheduledDateUTC : undefined,
     status: scheduledDate ? "scheduled" : "pending",
     questions: interviewQuestions,
-    length: interviewQuestions.length
+    totalQuestions: interviewQuestions.length
   });
+
+  console.log("Interview", interview);
 
   if (!interview) {
     return responseHelper(res, 500, "Failed", "Failed to schedule interview.");
