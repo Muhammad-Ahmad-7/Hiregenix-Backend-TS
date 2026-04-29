@@ -23,6 +23,7 @@ type Requirements = z.infer<typeof RequirementsSchema>;
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { config } from "../config/config.js";
 import { ChatGroq } from "@langchain/groq";
+import callLLM from "../utils/call-llm.js";
 
 export async function generateJobDescription({ jobTitle, jobRole, experienceLevel, workMode, skills }: {
     jobTitle: string;
@@ -34,11 +35,8 @@ export async function generateJobDescription({ jobTitle, jobRole, experienceLeve
     // Initialize the model (Gemini 1.5 Flash is recommended for stability)
     // 1. Initialize the model with your API Key
 
-    const llm = new ChatGroq({
-        model: "llama-3.3-70b-versatile",
-        apiKey: config.aiModel.grokApiKey,
-        temperature: 0.7,
-    });
+    const llm = callLLM({ name: "grok/gpt-oss-20b" });
+
 
     // Bind the schema to the model
     const structuredLlm = llm.withStructuredOutput(JobDescriptionSchema);
@@ -77,11 +75,7 @@ export async function generateInterviewGuidelines({ jobTitle, jobRole, experienc
     skills: string[];
     workMode: string;
 }): Promise<InterviewGuidelines> {
-    const llm = new ChatGroq({
-        model: "llama-3.3-70b-versatile",
-        apiKey: config.aiModel.grokApiKey,
-        temperature: 0.7,
-    });
+    const llm = callLLM({ name: "grok/gpt-oss-20b" });
 
     const structuredLlm = llm.withStructuredOutput(InterviewGuidelinesSchema);
 
@@ -110,11 +104,7 @@ export async function generateRequirements({ jobTitle, experienceLevel, skills }
     experienceLevel: string;
     skills: string[];
 }): Promise<Requirements> {
-    const llm = new ChatGroq({
-        model: "llama-3.3-70b-versatile",
-        apiKey: config.aiModel.grokApiKey,
-        temperature: 0.7,
-    });
+    const llm = callLLM({ name: "grok/gpt-oss-20b" });
     const structuredLlm = llm.withStructuredOutput(RequirementsSchema);
 
     const prompt = `

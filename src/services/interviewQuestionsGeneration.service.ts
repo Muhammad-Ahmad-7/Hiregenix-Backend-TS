@@ -2,6 +2,8 @@ import z from "zod";
 import ResumeModel from "../models/resume.model.js";
 import { ChatGroq } from "@langchain/groq";
 import { config } from "../config/config.js";
+import connectDB from "../config/db.js";
+import callLLM from "../utils/call-llm.js";
 
 async function generateQuestionsForInterview({ title, role, experienceLevel, interviewGuideline, requiredSkills, requirements, resumeId }: {
     title: string;
@@ -16,6 +18,8 @@ async function generateQuestionsForInterview({ title, role, experienceLevel, int
         // Get the job details (interview guidelines, required skills and requirements)
 
         // Get the candidate's profile related resume (projects, experience, summary etc) from the database
+
+        // await connectDB(); // Ensure DB connection is established
 
         const resumeData = await ResumeModel.findById(resumeId);
 
@@ -52,11 +56,7 @@ async function generateQuestionsForInterview({ title, role, experienceLevel, int
 
         // Call the LLM to generate the interview questions
 
-        const llm = new ChatGroq({
-            model: "llama-3.3-70b-versatile",
-            apiKey: config.aiModel.grokApiKey,
-            temperature: 0.7,
-        });
+        const llm = callLLM({ name: "grok/gpt-oss-20b" });
 
         const model = llm.withStructuredOutput(questionSchema);
 
@@ -65,7 +65,7 @@ async function generateQuestionsForInterview({ title, role, experienceLevel, int
         console.log("Raw LLM Output for Questions:\n", result);
 
         // Return the generated questions
-        return { questions: result.question, length: result.question.length };
+        return { questions: result.questions, length: result.questions.length };
     } catch (error) {
         console.error("Failed to generate interview questions:", error);
         throw new Error("Failed to generate interview questions. Please do it manually.");
@@ -75,66 +75,78 @@ export default generateQuestionsForInterview;
 
 
 const questionSchema = z.object({
-    question: z.array(z.string().min(5).max(1000).describe("The interview question text")),
+    questions: z.array(z.string().min(5).max(1000).describe("The interview question text")),
 });
 
 
 const QUESTIONS_GENERATION_PROMPT_TEMPLATE = `
-    You are a senior technical recruiter conducting a LIVE, ONE-TO-ONE ORAL interview.
+    You are a senior technical recruiter conducting a live, one-to-one interview.
 
-    Your task is to generate SHORT, CLEAR, and VERBALLY ASKABLE interview questions.
+    Your task is to generate concise, natural, verbally askable interview questions.
 
     -------------------------
     OBJECTIVE
     -------------------------
-    Generate 10-15 interview questions that evaluate:
+    Generate exactly 10 interview questions that assess:
     - Technical understanding
     - Real-world thinking
-    - Past experience authenticity
+    - Authentic past experience
     - Role fit
 
     -------------------------
-    STRICT RULES (CRITICAL)
+    RULES (STRICT)
     -------------------------
-    1. Each question MUST:
-    - Be MAX 20 words
-    - Contain ONLY ONE idea (no multi-part questions)
-    - Be easy to say out loud in one breath
-    - Sound natural in a conversation
+    1. Each question:
+    - Maximum 20 words
+    - Only one idea
+    - Focused on a single topic or skill
+    - Easy to speak in one breath
+    - Natural conversational tone
 
-    2. FIRST 3 questions:
-    - Based on candidate's projects/experience
-    - Mention specific tech (if available)
-    - Focus on "why", "how", or "decision-making"
+    2. First question:
+    - Must be about candidate's background
+    - Based on their projects or resume summary
 
-    3. Remaining questions:
-    - Based on job role, skills, and requirements
-    - Mix of:
-        - Technical (theoretical, definition, concepts)
-        - Situational (real-world scenarios)
-        - Behavioral (decisions, ownership)
+    3. Remaining 9 questions:
+    - Based on role, skills, and requirements
+    - Focus on practical and technical understanding
 
-    4. STRICTLY AVOID:
-    - Long or complex sentences
-    - Multiple questions in one line
-    - System design prompts like "design architecture"
-    - Generic questions
-    - Theoretical or academic phrasing
+    4. Avoid:
+    - Multi-part questions
+    - Long or complex phrasing
+    - System design questions
+    - Generic or vague wording
+    - Academic/theoretical tone
 
     5. Tone:
     - Direct
     - Conversational
-    - Interviewer speaking live
-    - Follow the interview guidelines strictly
+    - Spoken interview style
 
     -------------------------
-    OUTPUT FORMAT (STRICT JSON)
+    OUTPUT FORMAT
     -------------------------
-    Return ONLY valid JSON:
+    Return ONLY valid JSON.
+    Do not include explanations, notes, or markdown.
+
+    The response must strictly follow this structure:
 
     {
-    "questions": ["Question 1", "Question 2", ..., "Question N"]
+    "questions": [
+        "Question 1",
+        "Question 2",
+        "Question 3",
+        "Question 4",
+        "Question 5",
+        "Question 6",
+        "Question 7",
+        "Question 8",
+        "Question 9",
+        "Question 10"
+    ]
     }
+
+    If you are unsure, still return valid JSON in this exact format.
 
     -------------------------
     INPUT DATA
@@ -165,3 +177,18 @@ const QUESTIONS_GENERATION_PROMPT_TEMPLATE = `
 // });
 
 
+// question: [
+//     'What decisions led to using Node.js in ToolBestAI?',
+//     'How did you implement REST APIs in OnyxRenders?',
+//     'Why did you choose MongoDB for Virtual Home Staging?',
+//     'What are the benefits of using microservices architecture?',
+//     'How do you handle database transactions in a concurrent environment?',
+//     'Can you explain the concept of Event Sourcing?',
+//     'Describe a situation where you had to troubleshoot a complex backend issue.',
+//     'Tell me about a time when you had to make a technical decision with limited information.',
+//     'What are the key characteristics of a well-designed server-side logic?',
+//     'How do you ensure scalability in a cloud-based backend system?',
+//     'Can you walk me through your process for implementing CQRS?',
+//     'Describe your experience with GraphQL and GRPC.',
+//     'Tell me about a project where you had to integrate with a third-party API.'
+// ]

@@ -773,7 +773,7 @@ const endInterview = asyncHandler(async (req: Request, res: Response) => {
 
   // Return the response with success message and updated interview data
 
-  return responseHelper(res, 200, "Success", "Interview ended successfully.", {
+  return responseHelper(res, 200, "Success", "Your interview has ended.", {
     data: null,
   });
 })
