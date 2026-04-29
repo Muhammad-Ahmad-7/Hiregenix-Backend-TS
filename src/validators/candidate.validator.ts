@@ -12,7 +12,7 @@ export const candidateProfileCreationSchema = z.object({
     githubUrl: z.url().optional(),
     linkedinUrl: z.url().optional(),
     portfolioUrl: z.url().optional(),
-    skills: z.array(z.string().min(2).max(100)),
+    skills: z.array(z.string().max(100)),
     bio: z.string().min(2).max(500).optional(),
     tagline: z.string().min(2).max(100).optional(),
 });

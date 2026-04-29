@@ -71,8 +71,22 @@ export const getJobByIdSchema = z.object({
 })
 
 export const updateJobSchema = z.object({
-    deadline: z.coerce.date()
-
+    deadline: z.coerce.date(),
+    title: z.optional(z.string().min(2).max(100)),
+    role: z.optional(z.string().min(2).max(100)),
+    interviewGuideline: z.optional(z.string().min(2).max(2000)),
+    experienceLevel: z.optional(z.enum(["entry", "mid", "senior"])),
+    description: z.optional(z.string().min(2)),
+    requiredSkills: z.optional(z.array(z.string().min(1))),
+    requirements: z.optional(z.array(z.string().min(1))),
+    workMode: z.optional(z.enum(["full-time", "part-time", "remote"])),
+    location: z.optional(z.object({
+        city: z.string().min(2).max(100),
+    })),
+    salaryRange: z.optional(z.object({
+        min: z.number().min(0),
+        max: z.number().min(0),
+    })),
 })
 
 export const generateJobDataSchema = z.object({

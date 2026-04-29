@@ -9,19 +9,20 @@ type JobDescription = z.infer<typeof JobDescriptionSchema>;
 
 
 const InterviewGuidelinesSchema = z.object({
-    interviewGuidelines: z.string().min(2).max(2000).describe("Detailed guidelines for the interview")
+    interviewGuideline: z.string().min(2).max(2000).describe("Detailed guidelines for the interview")
 });
 
 type InterviewGuidelines = z.infer<typeof InterviewGuidelinesSchema>;
 
 const RequirementsSchema = z.object({
-    requirements: z.string().min(2).max(2000).describe("Specific technical and soft skill requirements")
+    requirements: z.array(z.string().min(2).max(1000).describe("Specific technical and soft skill requirements"))
 });
 
 type Requirements = z.infer<typeof RequirementsSchema>;
 
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { config } from "../config/config.js";
+import { ChatGroq } from "@langchain/groq";
 
 export async function generateJobDescription({ jobTitle, jobRole, experienceLevel, workMode, skills }: {
     jobTitle: string;
@@ -33,10 +34,10 @@ export async function generateJobDescription({ jobTitle, jobRole, experienceLeve
     // Initialize the model (Gemini 1.5 Flash is recommended for stability)
     // 1. Initialize the model with your API Key
 
-    const llm = new ChatGoogleGenerativeAI({
-        model: "gemini-2.5-flash",
-        apiKey: config.aiModel.geminiApiKey, // Get this from AI Studio
-        temperature: 0.7, // Adjust for creativity
+    const llm = new ChatGroq({
+        model: "llama-3.3-70b-versatile",
+        apiKey: config.aiModel.grokApiKey,
+        temperature: 0.7,
     });
 
     // Bind the schema to the model
@@ -76,23 +77,26 @@ export async function generateInterviewGuidelines({ jobTitle, jobRole, experienc
     skills: string[];
     workMode: string;
 }): Promise<InterviewGuidelines> {
-    const llm = new ChatGoogleGenerativeAI({
-        model: "gemini-1.5-flash", // Note: gemini-2.5 doesn't exist yet, sticking to stable
-        apiKey: config.aiModel.geminiApiKey,
-        temperature: 0.6,
+    const llm = new ChatGroq({
+        model: "llama-3.3-70b-versatile",
+        apiKey: config.aiModel.grokApiKey,
+        temperature: 0.7,
     });
 
     const structuredLlm = llm.withStructuredOutput(InterviewGuidelinesSchema);
 
     const prompt = `
-        Generate a 3-stage interview roadmap for a ${experienceLevel} ${jobTitle}.
+        Generate an interview guidelines for a ${experienceLevel} ${jobTitle}.
         Focus on these skills: ${skills.join(", ")}.
         Include specific technical questions and behavioral benchmarks for this seniority level.
         Tailor the guidelines for a ${workMode} role, emphasizing remote collaboration skills if applicable.
+        Make sure the guidelines you generate are for the spoken interview and not for the written/implementation/coding interview.
     `;
 
     try {
-        return await structuredLlm.invoke(prompt);
+        const result = await structuredLlm.invoke(prompt);
+        console.log(result);
+        return result;
     } catch (error) {
         throw new Error("Interview guidelines generation failed.");
     }
@@ -106,22 +110,51 @@ export async function generateRequirements({ jobTitle, experienceLevel, skills }
     experienceLevel: string;
     skills: string[];
 }): Promise<Requirements> {
-    const llm = new ChatGoogleGenerativeAI({
-        model: "gemini-1.5-flash",
-        apiKey: config.aiModel.geminiApiKey,
-        temperature: 0.5,
+    const llm = new ChatGroq({
+        model: "llama-3.3-70b-versatile",
+        apiKey: config.aiModel.grokApiKey,
+        temperature: 0.7,
     });
-
     const structuredLlm = llm.withStructuredOutput(RequirementsSchema);
 
     const prompt = `
         List detailed job requirements for a ${experienceLevel} ${jobTitle}.
         Base technical requirements on: ${skills.join(", ")}.
         Include necessary soft skills, certifications, and educational expectations for this level.
+
+        Example:
+
+    Technical Skills:
+    - Proficiency in JavaScript, TypeScript, and Node.js.
+    - Experience with React and Angular frameworks.
+    - Familiarity with cloud platforms like AWS or Azure.
+    - Strong understanding of RESTful APIs and microservices architecture.
+
+    Soft Skills:
+    - Excellent communication and teamwork abilities.
+    - Problem-solving mindset and adaptability.
+    - Leadership experience is a plus.
+
+    Educational Requirements:
+    - Bachelor's degree in Computer Science or related field (or equivalent experience).
+
+    Experience:
+    - 3-5 years of experience in software development, with a focus on full-stack development.
+
+    Output Format:
+    {
+    requirements: [
+        "Proficiency in JavaScript, TypeScript, and Node.js.",
+        "Experience with React and Angular frameworks.",
+    ]
+
+    }
     `;
 
     try {
-        return await structuredLlm.invoke(prompt);
+        const result = await structuredLlm.invoke(prompt);
+        console.log(result);
+        return result;
     } catch (error) {
         console.error("Failed to generate requirements:", error);
         throw new Error("Requirements generation failed.");

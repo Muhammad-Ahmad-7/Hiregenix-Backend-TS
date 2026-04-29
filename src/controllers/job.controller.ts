@@ -253,9 +253,19 @@ const updateJobById = asyncHandler(async (req: Request, res: Response) => {
     const companyId = existingCompany._id;
 
     const {
-        deadline
+        deadline,
+        title,
+        role,
+        salaryRange,
+        city,
+        interviewGuideline,
+        experienceLevel,
+        description,
+        requiredSkills,
+        workMode,
+        location,
+        requirements,
     } = req.body;
-
     // Check if job exists
     const job = await JobModel.findById(jobId);
     if (!job) {
@@ -265,6 +275,23 @@ const updateJobById = asyncHandler(async (req: Request, res: Response) => {
     // Build update object using previous values if not provided
     const updatedFields = {
         deadline: deadline ?? job.deadline,
+        title: title ?? job.title,
+        role: role ?? job.role,
+        salaryRange: {
+            min: salaryRange.min ?? job.salaryRange.min,
+            max: salaryRange.max ?? job.salaryRange.max,
+            currency: job.salaryRange.currency ?? "PKR"
+        },
+        location: {
+            city: location.city ?? job.location.city,
+            country: job.location.country
+        },
+        interviewGuideline: interviewGuideline ?? job.interviewGuideline,
+        experienceLevel: experienceLevel ?? job.experienceLevel,
+        description: description ?? job.description,
+        requiredSkills: requiredSkills ?? job.requiredSkills,
+        workMode: workMode ?? job.workMode,
+        requirements: requirements ?? job.requirements,
         qdrantId: null,
     };
 
@@ -395,7 +422,29 @@ const getCompanyOpenJobs = asyncHandler(async (req: Request, res: Response) => {
 
     const companyId = findCompany._id;
 
-    const findActiveJobs = await JobModel.find({ status: "open", companyId, isDeleted: false }).sort({ createdAt: -1 }).limit(limit).skip(skip);
+    // find active jobs along with interview count for each job
+
+    const findActiveJobs = await JobModel.aggregate([
+        { $match: { status: "open", companyId, isDeleted: false } },
+        {
+            $lookup: {
+                from: "interviews",
+                localField: "_id",
+                foreignField: "jobId",
+                as: "interviews"
+            }
+        },
+        {
+            $addFields: {
+                totalInterviews: { $size: "$interviews" }
+            }
+        },
+        {
+            $project: {
+                interviews: 0
+            }
+        }
+    ]).sort({ createdAt: -1 }).limit(limit).skip(skip);
 
     if (!findActiveJobs || findActiveJobs.length === 0) {
         return responseHelper(res, 404, "Failed", "No active jobs found.");

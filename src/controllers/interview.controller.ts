@@ -744,6 +744,40 @@ const sendRejectionEmail = asyncHandler(async (req: Request, res: Response) => {
 
 });
 
+const endInterview = asyncHandler(async (req: Request, res: Response) => {
+  // Get the interview id from the req.body
+
+  const { interviewId } = req.body;
+
+  // Check the id is valid or not
+
+  if (!interviewId || !isValidObjectId(interviewId)) {
+    return responseHelper(res, 400, "Failed", "Missing interview ID.");
+  }
+
+  // Fetch the interview doc from the interviewModel based on the provided id
+
+  const interviewDoc = await InterviewModel.findById(interviewId);
+
+  // Check if the interview exists or not, if not return with error message
+
+  if (!interviewDoc) {
+    return responseHelper(res, 404, "Failed", "Interview not found.");
+  }
+
+  // Update the interview status to "end" and save the doc
+
+  interviewDoc.status = "ended";
+
+  await interviewDoc.save();
+
+  // Return the response with success message and updated interview data
+
+  return responseHelper(res, 200, "Success", "Interview ended successfully.", {
+    data: null,
+  });
+})
+
 export {
   scheduleInterview,
   getTodayCandidateInterviews,
@@ -754,5 +788,6 @@ export {
   createLivenessCheck,
   checkFaceVerification,
   sendHiringEmail,
-  sendRejectionEmail
+  sendRejectionEmail,
+  endInterview,
 };

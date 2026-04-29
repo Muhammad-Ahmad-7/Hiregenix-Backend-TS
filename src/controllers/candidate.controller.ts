@@ -519,7 +519,7 @@ const editResumeData = asyncHandler(async (req: Request, res: Response) => {
     };
 
     if (resume.parsedData) {
-      resume.parsedData.experience = (resume.parsedData.experience ?? []).map((exp) => {
+      resume.parsedData.experience = (resume.parsedData.experience ?? []).map((exp: any) => {
         if ((exp as any)._id?.toString() === _id) {
           return { ...exp, ...updatedExperience };
         }
@@ -549,7 +549,7 @@ const editResumeData = asyncHandler(async (req: Request, res: Response) => {
       ...(endYear !== undefined ? { endYear } : {}),
     };
     if (resume.parsedData) {
-      resume.parsedData.education = (resume.parsedData.education ?? []).map((edu) => {
+      resume.parsedData.education = (resume.parsedData.education ?? []).map((edu: any) => {
         if ((edu as any)._id?.toString() === _id) {
           return { ...edu, ...updatedEducation };
         }
@@ -581,7 +581,7 @@ const editResumeData = asyncHandler(async (req: Request, res: Response) => {
       ...(technologies !== undefined ? { technologies } : {}),
     };
     if (resume.parsedData) {
-      resume.parsedData.projects = (resume.parsedData.projects ?? []).map((proj) => {
+      resume.parsedData.projects = (resume.parsedData.projects ?? []).map((proj: any) => {
         if ((proj as any)._id?.toString() === _id) {
           return { ...proj, ...updatedProject };
         }
@@ -609,7 +609,7 @@ const editResumeData = asyncHandler(async (req: Request, res: Response) => {
       ...(year !== undefined ? { year } : {}),
     };
     if (resume.parsedData) {
-      resume.parsedData.certifications = (resume.parsedData.certifications ?? []).map((cert) => {
+      resume.parsedData.certifications = (resume.parsedData.certifications ?? []).map((cert: any) => {
         if ((cert as any)._id?.toString() === _id) {
           return { ...cert, ...updatedCertification };
         }
@@ -646,7 +646,7 @@ const deleteResumeData = asyncHandler(async (req: Request, res: Response) => {
   const { type, _id } = req.body;
   if (type === "experience") {
     if (resume.parsedData) {
-      resume.parsedData.experience = (resume.parsedData.experience ?? []).filter((exp) => (exp as any)._id?.toString() !== _id);
+      resume.parsedData.experience = (resume.parsedData.experience ?? []).filter((exp: any) => (exp as any)._id?.toString() !== _id);
     }
     await resume.save();
     return responseHelper(
@@ -664,7 +664,7 @@ const deleteResumeData = asyncHandler(async (req: Request, res: Response) => {
 
   if (type === "education") {
     if (resume.parsedData) {
-      resume.parsedData.education = (resume.parsedData.education ?? []).filter((edu) => (edu as any)._id?.toString() !== _id);
+      resume.parsedData.education = (resume.parsedData.education ?? []).filter((edu: any) => (edu as any)._id?.toString() !== _id);
     }
     await resume.save();
     return responseHelper(
@@ -682,7 +682,7 @@ const deleteResumeData = asyncHandler(async (req: Request, res: Response) => {
 
   if (type === "project") {
     if (resume.parsedData) {
-      resume.parsedData.projects = (resume.parsedData.projects ?? []).filter((proj) => (proj as any)._id?.toString() !== _id);
+      resume.parsedData.projects = (resume.parsedData.projects ?? []).filter((proj: any) => (proj as any)._id?.toString() !== _id);
     }
     await resume.save();
     return responseHelper(
@@ -700,7 +700,7 @@ const deleteResumeData = asyncHandler(async (req: Request, res: Response) => {
 
   if (type === "certification") {
     if (resume.parsedData) {
-      resume.parsedData.certifications = (resume.parsedData.certifications ?? []).filter((cert) => (cert as any)._id?.toString() !== _id);
+      resume.parsedData.certifications = (resume.parsedData.certifications ?? []).filter((cert: any) => (cert as any)._id?.toString() !== _id);
     }
     await resume.save();
     return responseHelper(

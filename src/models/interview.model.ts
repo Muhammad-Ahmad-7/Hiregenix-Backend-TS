@@ -11,17 +11,18 @@ export interface IInterview extends Document {
     durationMins?: number;
 
     status:
-    | "pending"               // Interview created but not yet scheduled
-    | "scheduled"             // Scheduled but not started
-    | "notified"              // Notification sent to candidate
-    | "in-progress"           // Interview currently happening
-    | "completed"             // Interview completed successfully
-    | "missed"                // Scheduled but not attended, and job deadline passed
-    | "no-show"               // Scheduled but not attended, job still open
-    | "cancelled"             // Cancelled manually by candidate/company
+    | "pending"              // Interview created but not yet scheduled
+    | "scheduled"            // Scheduled but not started
+    | "notified"             // Notification sent to candidate
+    | "in-progress"          // Interview currently happening
+    | "completed"            // Interview completed successfully
+    | "missed"               // Scheduled but not attended, and job deadline passed
+    | "no-show"              // Scheduled but not attended, job still open
+    | "cancelled"            // Cancelled manually by candidate/company
     | "expired"              // Job deadline crossed, and interview never scheduled or completed
     | "rejected"             // Interview rejected after completion or during review
-    | "hired";
+    | "hired"                // Candidate hired after successful interview       
+    | "ended";               // Interview ended by the candidate
     questions: string[];
     totalQuestions: number;
     completedQuestions: number;
@@ -69,7 +70,8 @@ const InterviewSchema = new Schema<IInterview>(
                 "cancelled",
                 "expired",
                 "rejected",
-                "hired"
+                "hired",
+                "ended",
             ],
             default: "pending",
         },
