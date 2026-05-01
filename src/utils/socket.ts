@@ -97,7 +97,14 @@ export const initializeSocket = (httpServer: HttpServer) => {
     socket.on(
       "private-chat",
       async ({ selectedChat, userId, selectedChatP }) => {
-        if (selectedChatP.lastMessage.sender !== userId) {
+        const lastMessageSenderId =
+          selectedChatP?.lastMessage?.sender?.toString?.() ??
+          selectedChatP?.lastMessage?.sender ??
+          null;
+
+        // New chats can have null lastMessage; only mark as seen when
+        // there is an actual last message from the other participant.
+        if (lastMessageSenderId && lastMessageSenderId !== userId) {
           const onNew = await Chat.findByIdAndUpdate(
             selectedChat,
 
@@ -105,7 +112,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
             { new: true },
           );
           const onNew2 = await Message.updateMany(
-            { chat: selectedChat },
+            { chat: selectedChat, sender: { $ne: userId } },
             {
               status: "seen",
             },

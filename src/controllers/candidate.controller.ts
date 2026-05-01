@@ -264,7 +264,7 @@ const getCandidateProfileById = asyncHandler(
       return responseHelper(res, 400, "Failed", "User ID is required.");
     }
 
-    const candidate = await CandidateModel.findOne({ userId }).populate(
+    const candidate = await CandidateModel.findById( userId ).populate(
       "userId",
       "email role",
     );
@@ -372,8 +372,14 @@ const resumeParser = asyncHandler(async (req: Request, res: Response) => {
 
 const getResumeParsedData = asyncHandler(
   async (req: Request, res: Response) => {
+    let candidate:any=""
+if(req.params){
+   candidate=await CandidateModel.findById(req.params.id)
+}
+else{
+   candidate = await CandidateModel.findById(req.userId);
 
-    const candidate = await CandidateModel.findById(req.userId);
+}
 
     if (!candidate) {
       return responseHelper(res, 404, "Failed", "Candidate not found.");
@@ -771,6 +777,26 @@ const getCandidateDashboardStats = asyncHandler(
   },
 );
 
+const getAllCandidates = asyncHandler(async (req: Request, res: Response) => {
+  const candidates = await CandidateModel.find({
+    isProfileCompleted: true,
+  })
+    .select("fullName profilePictureUrl userId")
+    .lean();
+
+  return responseHelper(
+    res,
+    200,
+    "Success",
+    "Candidates fetched successfully.",
+    {
+      data: {
+        candidates,
+      },
+    },
+  );
+});
+
 export {
   resumeParser,
   completeCandidateProfile,
@@ -783,4 +809,5 @@ export {
   addResumeData,
   editResumeData,
   deleteResumeData,
+  getAllCandidates,
 };

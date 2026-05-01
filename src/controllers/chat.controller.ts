@@ -56,9 +56,13 @@ const getChats = asyncHandler(async (req: Request, res: Response) => {
   // ==========================================
   const formattedChats = await Promise.all(
     chats.map(async (chat: any) => {
-      const otherParticipantData = chat.participants.find(
-        (p: any) => p.userId._id.toString() !== currentUserId.toString(),
-      );
+      const otherParticipantData = chat.participants.find((p: any) => {
+        const participantUserId = p?.userId?._id;
+        return (
+          participantUserId &&
+          participantUserId.toString() !== currentUserId.toString()
+        );
+      });
 
       if (!otherParticipantData) return null;
 
@@ -224,9 +228,19 @@ const getOrCreateChat = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Find the other participant
-  const otherParticipantData = (chat as any).participants.find(
-    (p: any) => p.userId._id.toString() !== currentUserId.toString(),
-  );
+  const otherParticipantData = (chat as any).participants.find((p: any) => {
+    const participantUserId = p?.userId?._id;
+    return (
+      participantUserId &&
+      participantUserId.toString() !== currentUserId.toString()
+    );
+  });
+
+  if (!otherParticipantData?.userId?._id) {
+    return res.status(500).json({
+      message: "Unable to resolve chat participant",
+    });
+  }
 
   let participantProfile: any = null;
 

@@ -712,7 +712,8 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
                 report: 1,
                 "candidate.fullName": 1,
                 "candidate.countryName": 1,
-                "candidate.profilePictureUrl": 1
+                "candidate.profilePictureUrl": 1,
+                "candidate._id":1
             }
         },
         { $sort: { scheduledDate: -1 } },
