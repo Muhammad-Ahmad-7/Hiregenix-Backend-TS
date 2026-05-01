@@ -11,6 +11,7 @@ export interface ChatRequestBody {
   query: string;
   companyId: string | number;
 }
+//this is the controller 
 export async function companyChatBot(
   req: Request<{}, {}, ChatRequestBody>,
   res: Response,

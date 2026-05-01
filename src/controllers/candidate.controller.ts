@@ -777,6 +777,26 @@ const getCandidateDashboardStats = asyncHandler(
   },
 );
 
+const getAllCandidates = asyncHandler(async (req: Request, res: Response) => {
+  const candidates = await CandidateModel.find({
+    isProfileCompleted: true,
+  })
+    .select("fullName profilePictureUrl userId")
+    .lean();
+
+  return responseHelper(
+    res,
+    200,
+    "Success",
+    "Candidates fetched successfully.",
+    {
+      data: {
+        candidates,
+      },
+    },
+  );
+});
+
 export {
   resumeParser,
   completeCandidateProfile,
@@ -789,4 +809,5 @@ export {
   addResumeData,
   editResumeData,
   deleteResumeData,
+  getAllCandidates,
 };
