@@ -12,6 +12,7 @@ import CandidateModel from "../models/candidate.model.js";
 import compareFaces from "../services/faceVerification.service.js";
 import { DateTime } from "luxon";
 import generateQuestionsForInterview from "../services/interviewQuestionsGeneration.service.js";
+import ResumeModel from "../models/resume.model.js";
 
 const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   // Implementation for scheduling interview
@@ -26,6 +27,14 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
 
   if (!candidate) {
     return responseHelper(res, 404, "Failed", "Candidate not found.");
+  }
+
+  // find the candidate resume is uploaded or not 
+
+  const resume = await ResumeModel.findOne({ candidateId: userId });
+
+  if (!resume) {
+    return responseHelper(res, 400, "Failed", "Candidate profile is incomplete. Resume not found.");
   }
 
   if (!candidate.resumeId) {
@@ -330,6 +339,36 @@ const getAllCandidateInterviews = asyncHandler(
       },
 
       {
+        $lookup: {
+          from: "interviews",
+          let: { currentJobId: "$jobId" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$jobId", "$$currentJobId"] },
+              },
+            },
+            {
+              $group: {
+                _id: "$candidateId",
+              },
+            },
+            {
+              $count: "totalApplicants",
+            },
+          ],
+          as: "jobApplicantStats",
+        },
+      },
+      {
+        $addFields: {
+          totalApplicants: {
+            $ifNull: [{ $arrayElemAt: ["$jobApplicantStats.totalApplicants", 0] }, 0],
+          },
+        },
+      },
+
+      {
         $sort: { scheduledDate: 1 }, // sort AFTER filtering
       },
 
@@ -339,6 +378,8 @@ const getAllCandidateInterviews = asyncHandler(
       {
         $project: {
           _id: 1,
+          rank: 1,
+          totalApplicants: 1,
           candidateId: 1,
           jobId: 1,
           companyId: 1,

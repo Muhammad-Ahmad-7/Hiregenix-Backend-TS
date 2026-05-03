@@ -12,8 +12,10 @@ import { RecommendedJobModel } from "../models/recommended_jobs.model.js";
 import CandidateModel from "../models/candidate.model.js";
 import { InterviewModel } from "../models/interview.model.js";
 import { SavedJobModel } from "../models/save_job.model.js";
+import '../models/reports.model.js';
 import mongoose from "mongoose";
 import { generateInterviewGuidelines, generateJobDescription, generateRequirements } from "../services/jobDataCreation.service.js";
+import { report } from "node:process";
 
 
 
@@ -465,7 +467,7 @@ const getCompanyOpenJobs = asyncHandler(async (req: Request, res: Response) => {
 
 const getCompanyClosedJobs = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.userId;
-    const page = parseInt(req.query.page as string) || 1;
+    const page = parseInt(req.query.page as string) || 2;
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
@@ -482,7 +484,7 @@ const getCompanyClosedJobs = asyncHandler(async (req: Request, res: Response) =>
 
     const companyId = findCompany._id;
 
-    const findClosedJobs = await JobModel.find({ status: "closed", companyId, isDeleted: false }).sort({ createdAt: -1 }).limit(limit).skip(skip);
+    const findClosedJobs = await JobModel.find({ status: "closed", companyId: userId, isDeleted: false }).sort({ updatedAt: -1 }).limit(limit).skip(skip);
 
     if (!findClosedJobs || findClosedJobs.length === 0) {
         return responseHelper(res, 404, "Failed", "No closed jobs found.");
@@ -498,6 +500,83 @@ const getCompanyClosedJobs = asyncHandler(async (req: Request, res: Response) =>
         page: page,
         limit: limit,
         totalPages: Math.ceil(totalClosedJobs / limit),
+    });
+});
+
+const toggleJobStatus = asyncHandler(async (req: Request, res: Response) => {
+    // Get job id from req.params
+
+    const { jobId } = req.params;
+
+    if (!jobId) {
+        return responseHelper(res, 400, "Failed", "Job Id is required.");
+    }
+    // Find the job in the database using the job id
+
+    const job = await JobModel.findById(jobId);
+
+
+    // If job not found, return error response
+    if (!job) {
+        return responseHelper(res, 404, "Failed", "Job not found.");
+    }
+    // Check if the job belongs to the company making the request (using req.userId and job.companyId)
+
+    if (job.companyId.toString() !== req.userId) {
+        return responseHelper(res, 403, "Failed", "You are not authorized to toggle the status of this job.");
+    }
+
+
+    // if the job status is closed then allow to open it without checking interviews but if the job status is open then check the interviews and then allow to close it
+
+    if (job.status === "open") {
+        // check the job has no interviews scheduled or not, if interviews are scheduled then do not allow to toggle the status
+        const interviews = await InterviewModel.find({ jobId: job._id, status: "scheduled" });
+
+        if (interviews && interviews.length > 0) {
+            return responseHelper(res, 400, "Failed", "Cannot toggle job status with scheduled interviews.");
+        }
+        // job status is open then find all the interviews related to job and rank them based on the overall score and stored that rank in the interview collection and then allow to toggle the status
+
+        const allInterviews = await InterviewModel.find({ jobId: job._id }).populate("reportId");
+
+        console.log("all Interviews", allInterviews)
+
+        const sortedInterviews = allInterviews.sort((a, b) => {
+            const reportA = a.reportId as any;
+            const reportB = b.reportId as any;
+            if (!reportA || !reportB) {
+                return 0;
+            }
+            return reportB.overallScore - reportA.overallScore;
+        });
+
+        console.log("SORTED ", sortedInterviews)
+        // Now assign ranks based on the overallScore
+        for (const interview of sortedInterviews) {
+            interview.rank = sortedInterviews.indexOf(interview) + 1;
+            await interview.save();
+        }
+        console.log("RANKS ADDED")
+    }
+
+
+    // If job found, toggle the status (if open then close, if close then open)
+
+    const newJob = await JobModel.findByIdAndUpdate(jobId, {
+        status: job.status === "open" ? "closed" : "open"
+    }, { new: true });
+
+    if (!newJob) {
+        return responseHelper(res, 500, "Failed", "Failed to toggle job status.");
+    }
+
+    // Return success response with updated job data
+
+    return responseHelper(res, 200, "Success", "Job status toggled successfully.", {
+        data: {
+            job
+        }
     });
 });
 
@@ -651,7 +730,6 @@ const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
 })
 
 const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Response) => {
-    console.log("get interview application for jobs")
     const { jobId } = req.params;
     const userId = req.userId;
 
@@ -713,7 +791,7 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
                 "candidate.fullName": 1,
                 "candidate.countryName": 1,
                 "candidate.profilePictureUrl": 1,
-                "candidate._id":1
+                "candidate._id": 1
             }
         },
         { $sort: { scheduledDate: -1 } },
@@ -722,6 +800,8 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
     ]);
 
     console.log("Interviews", interviews);
+
+    const scheduledInterviewsCount = await InterviewModel.countDocuments({ jobId: jobId, companyId: userId, status: "scheduled" });
 
 
     if (!interviews) {
@@ -732,7 +812,8 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
 
     return responseHelper(res, 200, "Success", "Interview applications fetched successfully.", {
         data: {
-            interviews
+            interviews,
+            scheduledInterviewsCount
         }
     }, {
         total: totalInterviews,
@@ -941,5 +1022,6 @@ export {
     getSavedJobsOfCandidate,
     unSaveJobById,
     getAllCompanyJobs,
-    generateJobDataUsingAI
+    generateJobDataUsingAI,
+    toggleJobStatus
 }
