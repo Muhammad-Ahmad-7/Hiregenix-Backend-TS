@@ -467,7 +467,7 @@ const getCompanyOpenJobs = asyncHandler(async (req: Request, res: Response) => {
 
 const getCompanyClosedJobs = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.userId;
-    const page = parseInt(req.query.page as string) || 2;
+    const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
@@ -485,7 +485,6 @@ const getCompanyClosedJobs = asyncHandler(async (req: Request, res: Response) =>
     const companyId = findCompany._id;
 
     const findClosedJobs = await JobModel.find({ status: "closed", companyId: userId, isDeleted: false }).sort({ updatedAt: -1 }).limit(limit).skip(skip);
-
     if (!findClosedJobs || findClosedJobs.length === 0) {
         return responseHelper(res, 404, "Failed", "No closed jobs found.");
     }
@@ -538,26 +537,21 @@ const toggleJobStatus = asyncHandler(async (req: Request, res: Response) => {
         }
         // job status is open then find all the interviews related to job and rank them based on the overall score and stored that rank in the interview collection and then allow to toggle the status
 
-        const allInterviews = await InterviewModel.find({ jobId: job._id }).populate("reportId");
+        // const allInterviews = await InterviewModel.find({ jobId: job._id }).populate("reportId");
 
-        console.log("all Interviews", allInterviews)
-
-        const sortedInterviews = allInterviews.sort((a, b) => {
-            const reportA = a.reportId as any;
-            const reportB = b.reportId as any;
-            if (!reportA || !reportB) {
-                return 0;
-            }
-            return reportB.overallScore - reportA.overallScore;
-        });
-
-        console.log("SORTED ", sortedInterviews)
-        // Now assign ranks based on the overallScore
-        for (const interview of sortedInterviews) {
-            interview.rank = sortedInterviews.indexOf(interview) + 1;
-            await interview.save();
-        }
-        console.log("RANKS ADDED")
+        // const sortedInterviews = allInterviews.sort((a, b) => {
+        //     const reportA = a.reportId as any;
+        //     const reportB = b.reportId as any;
+        //     if (!reportA || !reportB) {
+        //         return 0;
+        //     }
+        //     return reportB.overallInterviewScore - reportA.overallInterviewScore;
+        // });
+        // // Now assign ranks based on the overallScore
+        // for (const interview of sortedInterviews) {
+        //     interview.rank = sortedInterviews.indexOf(interview) + 1;
+        //     await interview.save();
+        // }
     }
 
 
@@ -733,9 +727,12 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
     const { jobId } = req.params;
     const userId = req.userId;
 
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    console.log("req.query", req.query)
+    const limit = Number(req.query.limit) || 5;
+    const page = Number(req.query.page) || 1;
     const skip = (page - 1) * limit;
+    let { status } = req.query; // scheduled, completed, bestMatch
+    const isBestMatch = status === "bestMatch";
 
     if (!jobId) {
         return responseHelper(res, 400, "Failed", "Job Id is required.");
@@ -747,10 +744,16 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
     if (!mongoose.Types.ObjectId.isValid(jobId)) {
         return responseHelper(res, 400, "Failed", "Invalid Job Id.");
     }
+
+    if (isBestMatch) {
+        status = "completed";
+    }
+
     const interviews = await InterviewModel.aggregate([
         {
             $match: {
                 jobId: new mongoose.Types.ObjectId(jobId),
+                status: status ? status : { $in: ["scheduled", "completed", "ended"] },
                 companyId: new mongoose.Types.ObjectId(userId)
             }
         },
@@ -786,6 +789,7 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
             $project: {
                 type: 1,
                 scheduledDate: 1,
+                rank: 1,
                 status: 1,
                 report: 1,
                 "candidate.fullName": 1,
@@ -794,13 +798,10 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
                 "candidate._id": 1
             }
         },
-        { $sort: { scheduledDate: -1 } },
-        { $skip: skip },
-        { $limit: limit }
+        { $sort: { "report.overallInterviewScore": -1 } },
+        ...(isBestMatch ? [] : [{ $skip: skip }]),
+        { $limit: isBestMatch ? 5 : limit },
     ]);
-
-    console.log("Interviews", interviews);
-
     const scheduledInterviewsCount = await InterviewModel.countDocuments({ jobId: jobId, companyId: userId, status: "scheduled" });
 
 
@@ -808,7 +809,7 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
         return responseHelper(res, 500, "Failed", "Failed to fetch interview applications.");
     }
 
-    const totalInterviews = await InterviewModel.countDocuments({ jobId, companyId: userId });
+    const totalInterviews = await InterviewModel.countDocuments({ jobId, companyId: userId, status: status ? status : { $in: ["scheduled", "completed", "ended"] } });
 
     return responseHelper(res, 200, "Success", "Interview applications fetched successfully.", {
         data: {
@@ -817,7 +818,7 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
         }
     }, {
         total: totalInterviews,
-        page: page,
+        page: page ? page : 1,
         limit: limit,
         totalPages: Math.ceil(totalInterviews / limit),
     });
@@ -933,7 +934,6 @@ const getAllCompanyJobs = asyncHandler(async (req: Request, res: Response) => {
         {
             $match: {
                 companyId: new mongoose.Types.ObjectId(companyId),
-                status: "open",
                 isDeleted: false
             }
         },
