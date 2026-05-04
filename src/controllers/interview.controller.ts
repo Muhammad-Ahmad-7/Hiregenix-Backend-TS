@@ -557,11 +557,41 @@ const createInterviewQuestionResultForSkipQuestions = asyncHandler(async (req: R
     return responseHelper(res, 400, "Failed", "Question result already exists.");
   }
 
-  // db call to create a new question result document
+  // Default LLM analysis for skipped questions
+  const defaultLLMAnalysis = {
+    scores: {
+      contentScore: 0,
+      communicationScore: 0,
+      fluencyScore: 0,
+      confidenceScore: 0,
+      overallScore: 0,
+    },
+    fluencyAssessment: {
+      grammarQuality: "",
+      speechFlow: "",
+      paceAssessment: "",
+      detectedIssues: [],
+    },
+    insights: {
+      strengths: [],
+      weaknesses: [],
+      missingConcepts: [],
+      improvementSuggestions: [],
+    },
+    answerQuality: "Skipped - No answer provided",
+    integrity: {
+      integrityConcern: false,
+      integrityNotes: null,
+    },
+    shortSummary: "Candidate skipped this question, so no answer was provided for analysis.",
+  };
+
+  // db call to create a new question result document with default LLM analysis
   const questionResult = await QuestionResultModel.create({
     interviewId,
     questionId,
     questionText,
+    lLMAnalysis: defaultLLMAnalysis,
     status: "DONE",
     stages: {
       uploaded: true,
@@ -570,8 +600,8 @@ const createInterviewQuestionResultForSkipQuestions = asyncHandler(async (req: R
       videoAnalyzed: true,
       llmEvaluated: true,
       done: true,
-      failed: false
-    }
+      failed: false,
+    },
   });
 
   if (!questionResult) {
@@ -581,6 +611,10 @@ const createInterviewQuestionResultForSkipQuestions = asyncHandler(async (req: R
       },
     });
   }
+
+  // Now increment the counter for completedQuestions in the interview document
+  interview.completedQuestions = (interview.completedQuestions || 0) + 1;
+  await interview.save();
 
   return responseHelper(res, 200, "Success", "Question result created successfully for skip question.", {
     data: {
