@@ -902,7 +902,46 @@ const getSavedJobsOfCandidate = asyncHandler(async (req: Request, res: Response)
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const savedJobs = await SavedJobModel.find({ candidateId: userId }).populate("jobId").skip(skip).limit(limit).sort({ createdAt: -1 });
+    const savedJobs = await SavedJobModel.aggregate([
+        // 1. Filter by candidateId
+        { $match: { candidateId: new mongoose.Types.ObjectId(userId) } },
+
+        // 2. Sort before pagination
+        { $sort: { createdAt: -1 } },
+
+        // 3. Pagination
+        { $skip: skip },
+        { $limit: limit },
+
+        // 4. Join with Jobs (jobId)
+        {
+            $lookup: {
+                from: "jobs", // ensure this matches your actual collection name in MongoDB
+                localField: "jobId",
+                foreignField: "_id",
+                as: "jobId"
+            }
+        },
+        { $unwind: "$jobId" }, // Convert array to object
+
+        // 5. Join with Companies (nested inside the job)
+        {
+            $lookup: {
+                from: "companies", // ensure this matches your actual collection name
+                localField: "jobId.companyId",
+                foreignField: "_id",
+                as: "jobId.company" // Renaming happens here!
+            }
+        },
+        { $unwind: "$jobId.company" },
+
+        // 6. Cleanup: Remove the old companyId field
+        {
+            $project: {
+                "jobId.companyId": 0, // Exclude the original ID field
+            }
+        }
+    ]);
 
     if (!savedJobs) {
         return responseHelper(res, 400, "Failed", "Failed to get candidate saved jobs.");

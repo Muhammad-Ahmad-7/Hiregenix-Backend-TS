@@ -853,6 +853,30 @@ const endInterview = asyncHandler(async (req: Request, res: Response) => {
   });
 })
 
+const markInterviewAsInProcess = asyncHandler(async (req: Request, res: Response) => {
+  const { interviewId } = req.body;
+
+  if (!interviewId || !isValidObjectId(interviewId)) {
+    console.log("Invalid interview ID for marking in process");
+    return;
+  }
+
+  const interview = await InterviewModel.findById(interviewId);
+
+  if (!interview) {
+    console.log("Interview not found for marking in process");
+    return;
+  }
+
+  interview.status = "in-process";
+
+  await interview.save();
+
+  return responseHelper(res, 200, "Success", "Interview marked as in process.", {
+    data: null,
+  });
+});
+
 export {
   scheduleInterview,
   getTodayCandidateInterviews,
@@ -865,4 +889,5 @@ export {
   sendHiringEmail,
   sendRejectionEmail,
   endInterview,
+  markInterviewAsInProcess,
 };

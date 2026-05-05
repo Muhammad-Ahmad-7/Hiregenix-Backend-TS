@@ -13,7 +13,7 @@ export interface IInterview extends Document {
     status:
     | "scheduled"            // Scheduled but not started
     | "notified"             // Notification sent to candidate
-    | "in-progress"          // Interview currently happening
+    | "in-process"          // Interview currently happening
     | "completed"            // Interview completed successfully
     | "missed"               // Scheduled but not attended, and job deadline passed
     | "rejected"             // Interview rejected after completion or during review
@@ -60,7 +60,7 @@ const InterviewSchema = new Schema<IInterview>(
             enum: [
                 "scheduled",
                 "notified",
-                "in-progress",
+                "in-process",
                 "completed",
                 "missed",
                 "expired",
