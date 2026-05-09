@@ -19,10 +19,6 @@ const RequirementsSchema = z.object({
 });
 
 type Requirements = z.infer<typeof RequirementsSchema>;
-
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { config } from "../config/config.js";
-import { ChatGroq } from "@langchain/groq";
 import callLLM from "../utils/call-llm.js";
 
 export async function generateJobDescription({ jobTitle, jobRole, experienceLevel, workMode, skills }: {
@@ -42,15 +38,15 @@ export async function generateJobDescription({ jobTitle, jobRole, experienceLeve
     const structuredLlm = llm.withStructuredOutput(JobDescriptionSchema);
 
     const prompt = `
-  Act as a Technical Recruiter. Create a professional JD for:
-  - Title: ${jobTitle}
-  - Role: ${jobRole}
-  - Experience: ${experienceLevel}
-  - Mode: ${workMode}
-  - Required Skills: ${skills}
+    Act as a Technical Recruiter. Create a professional JD for:
+    - Title: ${jobTitle}
+    - Role: ${jobRole}
+    - Experience: ${experienceLevel}
+    - Mode: ${workMode}
+    - Required Skills: ${skills}
 
-  Provide a concise Role Overview, Responsibilities, and Technical Requirements.
-  Ensure the tone matches the ${experienceLevel} seniority level.
+    Provide a concise Role Overview, Responsibilities, and Technical Requirements.
+    Ensure the tone matches the ${experienceLevel} seniority level.
 `;
 
     try {
@@ -85,6 +81,7 @@ export async function generateInterviewGuidelines({ jobTitle, jobRole, experienc
         Include specific technical questions and behavioral benchmarks for this seniority level.
         Tailor the guidelines for a ${workMode} role, emphasizing remote collaboration skills if applicable.
         Make sure the guidelines you generate are for the spoken interview and not for the written/implementation/coding interview.
+        I want them in simple and concise format in paragraph form, not in bullet points or in a table. The guidelines should be comprehensive and cover all aspects of the interview process, including preparation, question types, and evaluation criteria.
     `;
 
     try {
@@ -137,8 +134,9 @@ export async function generateRequirements({ jobTitle, experienceLevel, skills }
         "Proficiency in JavaScript, TypeScript, and Node.js.",
         "Experience with React and Angular frameworks.",
     ]
-
     }
+
+    Max Array Length: 10
     `;
 
     try {

@@ -51,10 +51,10 @@ const completeCandidateProfile = asyncHandler(
       return responseHelper(res, 400, "Failed", "Profile already completed.");
     }
 
-    // const existingCandidateWithPhone = await CandidateModel.findOne({ contactNumber });
-    // if (existingCandidateWithPhone) {
-    //     return responseHelper(res, 400, "Failed", "Candidate with this phone number already exists.");
-    // }
+    const existingCandidateWithPhone = await CandidateModel.findOne({ contactNumber });
+    if (existingCandidateWithPhone) {
+      return responseHelper(res, 400, "Failed", "Candidate with this phone number already exists.");
+    }
 
     const updatedCandidate = await CandidateModel.findByIdAndUpdate(
       existingCandidate._id,
@@ -344,7 +344,6 @@ const resumeParser = asyncHandler(async (req: Request, res: Response) => {
   });
 
   try {
-    // Use the safe getChannel function
     sendToQueue(RESUME_QUEUE, task._id.toString());
     console.log("Message sent to RabbitMQ queue successfully");
   } catch (error) {
@@ -498,6 +497,27 @@ const addResumeData = asyncHandler(async (req: Request, res: Response) => {
       },
     );
   }
+
+  if (type === "skill") {
+    const newSkill = req.body.data;
+    if (Array.isArray(newSkill)) {
+      resume.parsedData?.skills?.unshift(...newSkill);
+    } else {
+      resume.parsedData?.skills?.unshift(newSkill);
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Skills data added to resume successfully.",
+      {
+        data: {
+          resume,
+        },
+      },
+    );
+  }
   return responseHelper(res, 400, "Failed", "Invalid type specified.");
 });
 
@@ -634,6 +654,41 @@ const editResumeData = asyncHandler(async (req: Request, res: Response) => {
       },
     );
   }
+  if (type === "skill") {
+    const newSkill = req.body.data;
+    if (newSkill === undefined || newSkill === null) {
+      return responseHelper(res, 400, "Failed", "New skill value is required.");
+    }
+    if (resume.parsedData) {
+      const skills = resume.parsedData.skills ?? [];
+      // support _id as index or as existing skill value
+      let updatedSkills = [...skills];
+      const idx = Number(_id);
+      if (!Number.isNaN(idx)) {
+        if (idx >= 0 && idx < updatedSkills.length) {
+          updatedSkills[idx] = newSkill;
+        }
+      } else {
+        const found = updatedSkills.findIndex((s: any) => s === _id);
+        if (found !== -1) {
+          updatedSkills[found] = newSkill;
+        }
+      }
+      resume.parsedData.skills = updatedSkills;
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Skill edited to resume successfully.",
+      {
+        data: {
+          resume,
+        },
+      },
+    );
+  }
   return responseHelper(res, 400, "Failed", "Invalid type specified.");
 });
 
@@ -716,6 +771,33 @@ const deleteResumeData = asyncHandler(async (req: Request, res: Response) => {
       "Certification data deleted from resume successfully.",
       {
 
+        data: {
+          resume,
+        },
+      },
+    );
+  }
+  if (type === "skill") {
+    if (resume.parsedData) {
+      const skills = resume.parsedData.skills ?? [];
+      const idx = Number(_id);
+      if (!Number.isNaN(idx)) {
+        // remove by index
+        if (idx >= 0 && idx < skills.length) {
+          resume.parsedData.skills = skills.filter((_: any, i: number) => i !== idx);
+        }
+      } else {
+        // remove by exact value match
+        resume.parsedData.skills = skills.filter((s: any) => s !== _id);
+      }
+    }
+    await resume.save();
+    return responseHelper(
+      res,
+      200,
+      "Success",
+      "Skill deleted from resume successfully.",
+      {
         data: {
           resume,
         },
