@@ -69,8 +69,8 @@ const getMessages = asyncHandler(async (req: Request, res: Response) => {
   await Message.updateMany(
     {
       chat: chatId,
-      sender: { $ne: user._id },
-      status: { $in: ["sent", "delivered"] }, // only update sent messages
+      sender: { $ne: currentUserId },
+      status: { $in: ["sent", "delivered"] }, // only update incoming messages
     },
     { $set: { status: "seen" } },
   );
@@ -157,8 +157,8 @@ const getMessages2 = asyncHandler(async (req: Request, res: Response) => {
   await Message.updateMany(
     {
       chat: chatId,
-      sender: { $ne: user._id },
-      status: { $in: ["sent", "delivered"] }, // only update sent messages
+      sender: { $ne: currentUserId },
+      status: { $in: ["sent", "delivered"] }, // only update incoming messages
     },
     { $set: { status: "seen" } },
   );
