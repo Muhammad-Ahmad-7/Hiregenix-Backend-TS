@@ -13,6 +13,7 @@ import compareFaces from "../services/faceVerification.service.js";
 import { DateTime } from "luxon";
 import generateQuestionsForInterview from "../services/interviewQuestionsGeneration.service.js";
 import ResumeModel from "../models/resume.model.js";
+import { ReportModel } from "../models/reports.model.js";
 
 const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   // Implementation for scheduling interview
@@ -261,41 +262,13 @@ const getAllCandidateInterviews = asyncHandler(
     // Filters
     const status = req.query.status as string | undefined;
 
-    // ✅ FIX: Proper boolean parsing
-    const withInLastOneWeek = req.query.withInLastOneWeek === "true";
-    const withInLastOneMonth = req.query.withInLastOneMonth === "true";
-
-    // ✅ FIX: Single date filter logic (no conflict)
-    let dateFilter: any = {};
-
-    if (withInLastOneWeek) {
-      dateFilter = {
-        scheduledDate: {
-          $gte: DateTime.now()
-            .setZone(TIMEZONE)
-            .minus({ weeks: 1 })
-            .toUTC()
-            .toJSDate(),
-        },
-      };
-    } else if (withInLastOneMonth) {
-      dateFilter = {
-        scheduledDate: {
-          $gte: DateTime.now()
-            .setZone(TIMEZONE)
-            .minus({ months: 1 })
-            .toUTC()
-            .toJSDate(),
-        },
-      };
-    }
-
     // ✅ Combined match (ALL filters in ONE place)
     const baseMatch = {
       candidateId: new mongoose.Types.ObjectId(userId),
       ...(status ? { status } : {}),
-      ...dateFilter,
     };
+
+    console.log("Base MATCH FILTER", baseMatch);
 
     // ✅ Aggregation
     const interviews = await InterviewModel.aggregate([
@@ -877,6 +850,45 @@ const markInterviewAsInProcess = asyncHandler(async (req: Request, res: Response
   });
 });
 
+const fetchInterviewQuestionResults = asyncHandler(async (req: Request, res: Response) => {
+  const { interviewId } = req.params;
+  if (!interviewId || !isValidObjectId(interviewId)) {
+    return responseHelper(res, 400, "Failed", "Invalid interview ID.");
+  }
+
+  const questionResults = await QuestionResultModel.find({ interviewId }, {
+    questionId: 1,
+    questionText: 1,
+    videoUrl: 1,
+    lLMAnalysis: 1,
+    "sttData.text": 1,
+  });
+
+  if (!questionResults) {
+    return responseHelper(res, 404, "Failed", "No question results found for this interview.");
+  }
+
+  const report = await ReportModel.findOne({ interviewId }, {
+    overallImprovementSuggestions: 1,
+    topStrengths: 1,
+    topWeaknesses: 1,
+    commonMissingConcepts: 1,
+    interviewSummary: 1,
+    pdfUrl: 1,
+  });
+
+  if (!report) {
+    console.log("No report found for interview ID:", interviewId);
+  }
+
+  return responseHelper(res, 200, "Success", "Question results fetched successfully.", {
+    data: {
+      questionResults,
+      report,
+    },
+  });
+});
+
 export {
   scheduleInterview,
   getTodayCandidateInterviews,
@@ -890,4 +902,5 @@ export {
   sendRejectionEmail,
   endInterview,
   markInterviewAsInProcess,
+  fetchInterviewQuestionResults,
 };

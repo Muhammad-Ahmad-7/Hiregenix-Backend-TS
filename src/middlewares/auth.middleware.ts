@@ -87,7 +87,7 @@ const isLoggedIn = async (req: Request, res: Response, next: NextFunction) => {
     }
   }
 
-  console.log("DECODED TOKEN", decodeToken);
+  // console.log("DECODED TOKEN", decodeToken);
 
   req.user = user;
   req.userId = decodeToken.userId.toString();

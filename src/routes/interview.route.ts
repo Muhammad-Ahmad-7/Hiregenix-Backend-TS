@@ -1,6 +1,6 @@
 import express from "express";
 import isLoggedIn from "../middlewares/auth.middleware.js";
-import { checkFaceVerification, createInterviewQuestionResult, createInterviewQuestionResultForSkipQuestions, createLivenessCheck, endInterview, getAllCandidateInterviews, getCandidateInterviewById, getTodayCandidateInterviews, markInterviewAsInProcess, scheduleInterview, sendHiringEmail, sendRejectionEmail } from "../controllers/interview.controller.js";
+import { checkFaceVerification, createInterviewQuestionResult, createInterviewQuestionResultForSkipQuestions, createLivenessCheck, endInterview, fetchInterviewQuestionResults, getAllCandidateInterviews, getCandidateInterviewById, getTodayCandidateInterviews, markInterviewAsInProcess, scheduleInterview, sendHiringEmail, sendRejectionEmail } from "../controllers/interview.controller.js";
 import { isCandidate } from "../middlewares/candidate.middleware.js";
 import { validateRequest } from "../middlewares/validate.middleware.js";
 import { createInterviewQuestionResultForSkipQuestionsSchema, CreateInterviewQuestionResultSchema } from "../validators/interview.validator.js";
@@ -21,6 +21,7 @@ interviewRouter.post("/send-hiring-email", isLoggedIn, isCompany, sendHiringEmai
 interviewRouter.post("/send-rejection-email", isLoggedIn, isCompany, sendRejectionEmail);
 interviewRouter.post("/end-interview", isLoggedIn, isCandidate, endInterview);
 interviewRouter.post("/mark-in-process", isLoggedIn, isCandidate, markInterviewAsInProcess);
+interviewRouter.get("/interview-question-results/:interviewId", isLoggedIn, fetchInterviewQuestionResults);
 
 
 export default interviewRouter;
