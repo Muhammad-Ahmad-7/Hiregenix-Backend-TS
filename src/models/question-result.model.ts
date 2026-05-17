@@ -20,6 +20,12 @@ export interface IQuestionResult extends Document {
         overall?: number;               // aggregate score
     };
     lLMAnalysis: any;
+    verificationSummary?: any | null;
+    verificationEvents?: {
+        eventType: string;
+        timestamp: Date;
+        details?: any;
+    }[];
     status: 'PROCESSING' | 'DONE' | 'FAILED';   // Main status of processing
 
     // Per-stage boolean flags
@@ -105,6 +111,14 @@ const QuestionResultSchema = new Schema<IQuestionResult>({
     lLMAnalysis: {
         type: Object,
         default: null
+    },
+    verificationSummary: {
+        type: Schema.Types.Mixed,
+        default: null
+    },
+    verificationEvents: {
+        type: [],
+        default: []
     },
     status: {
         type: String,

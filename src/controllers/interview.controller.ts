@@ -14,6 +14,7 @@ import { DateTime } from "luxon";
 import generateQuestionsForInterview from "../services/interviewQuestionsGeneration.service.js";
 import ResumeModel from "../models/resume.model.js";
 import { ReportModel } from "../models/reports.model.js";
+import { generateVerificationSummary } from "../utils/utils.js";
 
 const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   // Implementation for scheduling interview
@@ -426,7 +427,9 @@ const getCandidateInterviewById = asyncHandler(
 );
 
 const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Response) => {
-  const { interviewId, questionId, questionText, videoUrl, numberOfTabSwitch } = req.body;
+  const { interviewId, questionId, questionText, videoUrl, numberOfTabSwitch, verificationEvents } = req.body;
+
+  console.log("Received body:", req.body);
 
   if (!interviewId || !questionId || !questionText) {
     console.log("missing")
@@ -451,6 +454,13 @@ const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Res
     return responseHelper(res, 400, "Failed", "Question result already exists.");
   }
 
+  let verificationSummary = null;
+  if (verificationEvents) {
+    verificationSummary = generateVerificationSummary(verificationEvents);
+  }
+
+  console.log("verification summary", verificationSummary);
+
   // db call to create a new question result document
   const questionResult = await QuestionResultModel.create({
     interviewId,
@@ -458,6 +468,8 @@ const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Res
     questionText,
     videoUrl,
     numberOfTabSwitch,
+    verificationSummary,
+    verificationEvents,
     stages: {
       uploaded: true,
       audioExtracted: false,
