@@ -60,7 +60,7 @@ export class EmailService {
             });
 
             const mailOptions = {
-                from: `"hiregenX" <${config.email.user}>`,
+                from: `"Hiregenix" <${config.email.user}>`,
                 to,
                 subject: 'Verify Your Email',
                 html,
@@ -75,32 +75,32 @@ export class EmailService {
     }
 
     // Send a password reset email to the specified recipient
-    static async sendPasswordResetEmail(
+    static async sendPasswordResetOtp(
         to: string,
         name: string,
-        resetToken: string
+        resetOtp: string
     ): Promise<void> {
         try {
             const template = await this.getTemplate('resetPassword');
-            const resetLink = `${config.frontend.url}/reset-password?token=${resetToken}`;
 
             const html = this.replaceTemplateVariables(template, {
                 name,
-                resetLink,
+                resetOtp,
+                year: new Date().getFullYear().toString()
             });
 
             const mailOptions = {
-                from: `"FredAbod" <${config.email.user}>`,
+                from: `"Hiregenix" <${config.email.user}>`,
                 to,
                 subject: 'Reset Your Password',
                 html,
             };
 
             const info = await this.transporter.sendMail(mailOptions);
-            console.log('Password reset email sent successfully:', info.messageId);
+            console.log('Password reset OTP email sent successfully:', info.messageId);
         } catch (error) {
-            console.error('Error sending password reset email:', error);
-            throw new Error('Failed to send password reset email');
+            console.error('Error sending password reset OTP email:', error);
+            throw new Error('Failed to send password reset OTP email');
         }
     }
 
@@ -141,7 +141,7 @@ export class EmailService {
             });
 
             const mailOptions = {
-                from: `"Hiregenx" <${config.email.user}>`,
+                from: `"Hiregenix" <${config.email.user}>`,
                 to,
                 subject: `Reminder: Interview for ${jobTitle}`,
                 html,

@@ -12,8 +12,10 @@ import { RecommendedJobModel } from "../models/recommended_jobs.model.js";
 import CandidateModel from "../models/candidate.model.js";
 import { InterviewModel } from "../models/interview.model.js";
 import { SavedJobModel } from "../models/save_job.model.js";
+import '../models/reports.model.js';
 import mongoose from "mongoose";
-import { generateJobDescription } from "../services/jobDataCreation.service.js";
+import { generateInterviewGuidelines, generateJobDescription, generateRequirements } from "../services/jobDataCreation.service.js";
+import { report } from "node:process";
 
 
 
@@ -32,7 +34,6 @@ const createJob = asyncHandler(async (req: Request, res: Response) => {
         location,
         salaryRange,
         requirements,
-        status,
         deadline
     } = req.body;
 
@@ -55,7 +56,6 @@ const createJob = asyncHandler(async (req: Request, res: Response) => {
         location,
         salaryRange,
         requirements,
-        status,
         companyId,
         deadline
     })
@@ -255,20 +255,19 @@ const updateJobById = asyncHandler(async (req: Request, res: Response) => {
     const companyId = existingCompany._id;
 
     const {
+        deadline,
         title,
         role,
+        salaryRange,
+        city,
         interviewGuideline,
         experienceLevel,
         description,
         requiredSkills,
         workMode,
         location,
-        salaryRange,
         requirements,
-        status,
-        deadline
     } = req.body;
-
     // Check if job exists
     const job = await JobModel.findById(jobId);
     if (!job) {
@@ -277,35 +276,51 @@ const updateJobById = asyncHandler(async (req: Request, res: Response) => {
 
     // Build update object using previous values if not provided
     const updatedFields = {
+        deadline: deadline ?? job.deadline,
         title: title ?? job.title,
         role: role ?? job.role,
+        salaryRange: {
+            min: salaryRange.min ?? job.salaryRange.min,
+            max: salaryRange.max ?? job.salaryRange.max,
+            currency: job.salaryRange.currency ?? "PKR"
+        },
+        location: {
+            city: location.city ?? job.location.city,
+            country: job.location.country
+        },
         interviewGuideline: interviewGuideline ?? job.interviewGuideline,
         experienceLevel: experienceLevel ?? job.experienceLevel,
         description: description ?? job.description,
         requiredSkills: requiredSkills ?? job.requiredSkills,
         workMode: workMode ?? job.workMode,
-        location: location ?? job.location,
-        salaryRange: salaryRange ?? job.salaryRange,
         requirements: requirements ?? job.requirements,
-        status: status ?? job.status,
-        deadline: deadline ?? job.deadline,
         qdrantId: null,
     };
 
 
     if (job.qdrantId !== null) {
-        const result = await qdrantClient.delete(
+        const find = await qdrantClient.retrieve(
             "job",
             {
-                points: [
-                    job?.qdrantId as string
-                ],
-                wait: true,
-            },
+                ids: [job.qdrantId as string]
+            }
         )
+        if (!find) {
+            console.log("Qdrant document not found for this job. It may have been already deleted or not created properly.")
+        } else {
+            const result = await qdrantClient.delete(
+                "job",
+                {
+                    points: [
+                        job?.qdrantId as string
+                    ],
+                    wait: true,
+                },
+            )
 
-        if (result.status !== "completed") {
-            console.log("Job deleted from mongodb but not from qdrant db.")
+            if (result.status !== "completed") {
+                console.log("Job deleted from mongodb but not from qdrant db.")
+            }
         }
     }
 
@@ -344,6 +359,12 @@ const deleteJob = asyncHandler(async (req: Request, res: Response) => {
 
     if (!job) {
         return responseHelper(res, 400, "Failed", "Job not found.");
+    }
+
+    const interviews = await InterviewModel.find({ jobId: job._id });
+
+    if (interviews && interviews.length > 0) {
+        return responseHelper(res, 400, "Failed", "Cannot delete job with existing interviews.");
     }
 
     if (job.isDeleted) {
@@ -403,7 +424,29 @@ const getCompanyOpenJobs = asyncHandler(async (req: Request, res: Response) => {
 
     const companyId = findCompany._id;
 
-    const findActiveJobs = await JobModel.find({ status: "open", companyId, isDeleted: false }).sort({ createdAt: -1 }).limit(limit).skip(skip);
+    // find active jobs along with interview count for each job
+
+    const findActiveJobs = await JobModel.aggregate([
+        { $match: { status: "open", companyId, isDeleted: false } },
+        {
+            $lookup: {
+                from: "interviews",
+                localField: "_id",
+                foreignField: "jobId",
+                as: "interviews"
+            }
+        },
+        {
+            $addFields: {
+                totalInterviews: { $size: "$interviews" }
+            }
+        },
+        {
+            $project: {
+                interviews: 0
+            }
+        }
+    ]).sort({ createdAt: -1 }).limit(limit).skip(skip);
 
     if (!findActiveJobs || findActiveJobs.length === 0) {
         return responseHelper(res, 404, "Failed", "No active jobs found.");
@@ -441,8 +484,7 @@ const getCompanyClosedJobs = asyncHandler(async (req: Request, res: Response) =>
 
     const companyId = findCompany._id;
 
-    const findClosedJobs = await JobModel.find({ status: "closed", companyId, isDeleted: false }).sort({ createdAt: -1 }).limit(limit).skip(skip);
-
+    const findClosedJobs = await JobModel.find({ status: "closed", companyId: userId, isDeleted: false }).sort({ updatedAt: -1 }).limit(limit).skip(skip);
     if (!findClosedJobs || findClosedJobs.length === 0) {
         return responseHelper(res, 404, "Failed", "No closed jobs found.");
     }
@@ -457,6 +499,78 @@ const getCompanyClosedJobs = asyncHandler(async (req: Request, res: Response) =>
         page: page,
         limit: limit,
         totalPages: Math.ceil(totalClosedJobs / limit),
+    });
+});
+
+const toggleJobStatus = asyncHandler(async (req: Request, res: Response) => {
+    // Get job id from req.params
+
+    const { jobId } = req.params;
+
+    if (!jobId) {
+        return responseHelper(res, 400, "Failed", "Job Id is required.");
+    }
+    // Find the job in the database using the job id
+
+    const job = await JobModel.findById(jobId);
+
+
+    // If job not found, return error response
+    if (!job) {
+        return responseHelper(res, 404, "Failed", "Job not found.");
+    }
+    // Check if the job belongs to the company making the request (using req.userId and job.companyId)
+
+    if (job.companyId.toString() !== req.userId) {
+        return responseHelper(res, 403, "Failed", "You are not authorized to toggle the status of this job.");
+    }
+
+
+    // if the job status is closed then allow to open it without checking interviews but if the job status is open then check the interviews and then allow to close it
+
+    if (job.status === "open") {
+        // check the job has no interviews scheduled or not, if interviews are scheduled then do not allow to toggle the status
+        const interviews = await InterviewModel.find({ jobId: job._id, status: "scheduled" });
+
+        if (interviews && interviews.length > 0) {
+            return responseHelper(res, 400, "Failed", "Cannot toggle job status with scheduled interviews.");
+        }
+        // job status is open then find all the interviews related to job and rank them based on the overall score and stored that rank in the interview collection and then allow to toggle the status
+
+        // const allInterviews = await InterviewModel.find({ jobId: job._id }).populate("reportId");
+
+        // const sortedInterviews = allInterviews.sort((a, b) => {
+        //     const reportA = a.reportId as any;
+        //     const reportB = b.reportId as any;
+        //     if (!reportA || !reportB) {
+        //         return 0;
+        //     }
+        //     return reportB.overallInterviewScore - reportA.overallInterviewScore;
+        // });
+        // // Now assign ranks based on the overallScore
+        // for (const interview of sortedInterviews) {
+        //     interview.rank = sortedInterviews.indexOf(interview) + 1;
+        //     await interview.save();
+        // }
+    }
+
+
+    // If job found, toggle the status (if open then close, if close then open)
+
+    const newJob = await JobModel.findByIdAndUpdate(jobId, {
+        status: job.status === "open" ? "closed" : "open"
+    }, { new: true });
+
+    if (!newJob) {
+        return responseHelper(res, 500, "Failed", "Failed to toggle job status.");
+    }
+
+    // Return success response with updated job data
+
+    return responseHelper(res, 200, "Success", "Job status toggled successfully.", {
+        data: {
+            job
+        }
     });
 });
 
@@ -610,13 +724,15 @@ const getAllJobs = asyncHandler(async (req: Request, res: Response) => {
 })
 
 const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Response) => {
-    console.log("get interview application for jobs")
     const { jobId } = req.params;
     const userId = req.userId;
 
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    console.log("req.query", req.query)
+    const limit = Number(req.query.limit) || 5;
+    const page = Number(req.query.page) || 1;
     const skip = (page - 1) * limit;
+    let { status } = req.query; // scheduled, completed, bestMatch
+    const isBestMatch = status === "bestMatch";
 
     if (!jobId) {
         return responseHelper(res, 400, "Failed", "Job Id is required.");
@@ -628,10 +744,16 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
     if (!mongoose.Types.ObjectId.isValid(jobId)) {
         return responseHelper(res, 400, "Failed", "Invalid Job Id.");
     }
+
+    if (isBestMatch) {
+        status = "completed";
+    }
+
     const interviews = await InterviewModel.aggregate([
         {
             $match: {
                 jobId: new mongoose.Types.ObjectId(jobId),
+                status: status ? status : { $in: ["scheduled", "completed", "ended"] },
                 companyId: new mongoose.Types.ObjectId(userId)
             }
         },
@@ -667,34 +789,36 @@ const getInterviewApplicationsForJob = asyncHandler(async (req: Request, res: Re
             $project: {
                 type: 1,
                 scheduledDate: 1,
+                rank: 1,
                 status: 1,
                 report: 1,
                 "candidate.fullName": 1,
                 "candidate.countryName": 1,
-                "candidate.profilePictureUrl": 1
+                "candidate.profilePictureUrl": 1,
+                "candidate._id": 1
             }
         },
-        { $sort: { scheduledDate: -1 } },
-        { $skip: skip },
-        { $limit: limit }
+        { $sort: { "report.overallInterviewScore": -1 } },
+        ...(isBestMatch ? [] : [{ $skip: skip }]),
+        { $limit: isBestMatch ? 5 : limit },
     ]);
-
-    console.log("Interviews", interviews);
+    const scheduledInterviewsCount = await InterviewModel.countDocuments({ jobId: jobId, companyId: userId, status: "scheduled" });
 
 
     if (!interviews) {
         return responseHelper(res, 500, "Failed", "Failed to fetch interview applications.");
     }
 
-    const totalInterviews = await InterviewModel.countDocuments({ jobId, companyId: userId });
+    const totalInterviews = await InterviewModel.countDocuments({ jobId, companyId: userId, status: status ? status : { $in: ["scheduled", "completed", "ended"] } });
 
     return responseHelper(res, 200, "Success", "Interview applications fetched successfully.", {
         data: {
-            interviews
+            interviews,
+            scheduledInterviewsCount
         }
     }, {
         total: totalInterviews,
-        page: page,
+        page: page ? page : 1,
         limit: limit,
         totalPages: Math.ceil(totalInterviews / limit),
     });
@@ -778,7 +902,46 @@ const getSavedJobsOfCandidate = asyncHandler(async (req: Request, res: Response)
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
 
-    const savedJobs = await SavedJobModel.find({ candidateId: userId }).populate("jobId").skip(skip).limit(limit).sort({ createdAt: -1 });
+    const savedJobs = await SavedJobModel.aggregate([
+        // 1. Filter by candidateId
+        { $match: { candidateId: new mongoose.Types.ObjectId(userId) } },
+
+        // 2. Sort before pagination
+        { $sort: { createdAt: -1 } },
+
+        // 3. Pagination
+        { $skip: skip },
+        { $limit: limit },
+
+        // 4. Join with Jobs (jobId)
+        {
+            $lookup: {
+                from: "jobs", // ensure this matches your actual collection name in MongoDB
+                localField: "jobId",
+                foreignField: "_id",
+                as: "jobId"
+            }
+        },
+        { $unwind: "$jobId" }, // Convert array to object
+
+        // 5. Join with Companies (nested inside the job)
+        {
+            $lookup: {
+                from: "companies", // ensure this matches your actual collection name
+                localField: "jobId.companyId",
+                foreignField: "_id",
+                as: "jobId.company" // Renaming happens here!
+            }
+        },
+        { $unwind: "$jobId.company" },
+
+        // 6. Cleanup: Remove the old companyId field
+        {
+            $project: {
+                "jobId.companyId": 0, // Exclude the original ID field
+            }
+        }
+    ]);
 
     if (!savedJobs) {
         return responseHelper(res, 400, "Failed", "Failed to get candidate saved jobs.");
@@ -810,7 +973,6 @@ const getAllCompanyJobs = asyncHandler(async (req: Request, res: Response) => {
         {
             $match: {
                 companyId: new mongoose.Types.ObjectId(companyId),
-                status: "open",
                 isDeleted: false
             }
         },
@@ -863,6 +1025,14 @@ const generateJobDataUsingAI = asyncHandler(async (req: Request, res: Response) 
         jobData = await generateJobDescription({ jobTitle, jobRole, experienceLevel, workMode, skills });
     }
 
+    if (type === "interviewGuideline") {
+        jobData = await generateInterviewGuidelines({ jobTitle, jobRole, experienceLevel, workMode, skills });
+    }
+
+    if (type === "requirements") {
+        jobData = await generateRequirements({ jobTitle, experienceLevel, skills });
+    }
+
     if (!jobData) {
         return responseHelper(res, 500, "Failed", "Failed to generate job data.");
     }
@@ -891,5 +1061,6 @@ export {
     getSavedJobsOfCandidate,
     unSaveJobById,
     getAllCompanyJobs,
-    generateJobDataUsingAI
+    generateJobDataUsingAI,
+    toggleJobStatus
 }

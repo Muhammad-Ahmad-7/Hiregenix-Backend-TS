@@ -11,22 +11,23 @@ export interface IInterview extends Document {
     durationMins?: number;
 
     status:
-    | "pending"               // Interview created but not yet scheduled
-    | "scheduled"             // Scheduled but not started
-    | "notified"              // Notification sent to candidate
-    | "in-progress"           // Interview currently happening
-    | "completed"             // Interview completed successfully
-    | "missed"                // Scheduled but not attended, and job deadline passed
-    | "no-show"               // Scheduled but not attended, job still open
-    | "cancelled"             // Cancelled manually by candidate/company
-    | "expired";              // Job deadline crossed, and interview never scheduled or completed
+    | "scheduled"            // Scheduled but not started
+    | "notified"             // Notification sent to candidate
+    | "in-process"          // Interview currently happening
+    | "completed"            // Interview completed successfully
+    | "missed"               // Scheduled but not attended, and job deadline passed
+    | "rejected"             // Interview rejected after completion or during review
+    | "hired"                // Candidate hired after successful interview       
+    | "ended";               // Interview ended by the candidate
     questions: string[];
     totalQuestions: number;
     completedQuestions: number;
+    rank: number;
     livenessVideoUrl: string;
     livenessCheckPassed: boolean;
     faceCaptureImageUrl: string;
     faceCaptureEmbeddings: number[];
+    reportId: Types.ObjectId;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -57,32 +58,36 @@ const InterviewSchema = new Schema<IInterview>(
         status: {
             type: String,
             enum: [
-                "pending",
                 "scheduled",
                 "notified",
-                "in-progress",
+                "in-process",
                 "completed",
                 "missed",
-                "no-show",
-                "cancelled",
                 "expired",
+                "rejected",
+                "hired",
+                "ended",
             ],
-            default: "pending",
+            default: "scheduled",
         },
         questions: {
             type: [String],
-            // TODO: This one needs to be changed
             default: [
-                "Define 'Idempotency' in the context of HTTP methods and why it matters for API design.",
-                "What is a deadlock in a database, and how can a developer prevent one from occurring.",
-                "Explain the concept of 'Horizontal Scaling' versus 'Vertical Scaling' for a server.",
-                "What is the purpose of a Message Queue like RabbitMQ or Kafka in a distributed system?",
-                "What is a 'Rate Limiter' and why is it important for public-facing APIs?",
+                "Tell me about a recent challenge you solved.",
+                "What's something you failed at recently?",
+                "How do you handle tight deadlines?",
+                "Describe a time you disagreed with a teammate.",
+                "How do you prioritize your work?",
+                "How do you approach a completely new problem?",
+                "What do you do when you're stuck?",
+                "How do you break down complex tasks?",
+                "How do you decide between multiple solutions?",
+                "What does ownership mean to you?",
             ],
         },
         totalQuestions: {
             type: Number,
-            default: 5, // TODO: This one needs to be changed
+            default: 10,
         },
         completedQuestions: {
             type: Number,
@@ -102,6 +107,15 @@ const InterviewSchema = new Schema<IInterview>(
         },
         faceCaptureEmbeddings: {
             type: [Number],
+            default: null,
+        },
+        rank: {
+            type: Number,
+            default: 0,
+        },
+        reportId: {
+            type: Schema.Types.ObjectId,
+            ref: "Report",
             default: null,
         },
     },

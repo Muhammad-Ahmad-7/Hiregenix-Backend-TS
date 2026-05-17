@@ -6,16 +6,42 @@ import { InterviewModel } from "../models/interview.model.js";
 import QuestionResultModel from "../models/question-result.model.js";
 import mongoose, { isValidObjectId } from "mongoose";
 import { TaskModel } from "../models/task.model.js";
-import { LIVENESS_CHECK_QUEUE, SPEECH_TO_TEXT_QUEUE, TIMEZONE } from "../utils/constant.js";
+import { LIVENESS_CHECK_QUEUE, SEND_HIRING_EMAIL_QUEUE, SEND_REJECTION_EMAIL_QUEUE, SPEECH_TO_TEXT_QUEUE, TIMEZONE } from "../utils/constant.js";
 import { sendToQueue } from "../config/rabbitmq.js";
 import CandidateModel from "../models/candidate.model.js";
 import compareFaces from "../services/faceVerification.service.js";
 import { DateTime } from "luxon";
+import generateQuestionsForInterview from "../services/interviewQuestionsGeneration.service.js";
+import ResumeModel from "../models/resume.model.js";
+import { ReportModel } from "../models/reports.model.js";
+import { generateVerificationSummary } from "../utils/utils.js";
 
 const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   // Implementation for scheduling interview
 
   const userId = req.userId;
+
+  if (!userId) {
+    return responseHelper(res, 401, "Failed", "Unauthorized access.");
+  }
+
+  const candidate = await CandidateModel.findById(userId);
+
+  if (!candidate) {
+    return responseHelper(res, 404, "Failed", "Candidate not found.");
+  }
+
+  // find the candidate resume is uploaded or not 
+
+  const resume = await ResumeModel.findOne({ candidateId: userId });
+
+  if (!resume) {
+    return responseHelper(res, 400, "Failed", "Candidate profile is incomplete. Resume not found.");
+  }
+
+  if (!candidate.resumeId) {
+    return responseHelper(res, 400, "Failed", "Candidate profile is incomplete. Resume not found.");
+  }
 
   const { jobId } = req.params;
   const { scheduledDate } = req.body;
@@ -114,6 +140,31 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
     );
   }
 
+  // No existing interview, create a new one
+  // Generate questions for the interview based on the job requirements and candidate profile 
+
+  const { title, role, experienceLevel, interviewGuideline, requiredSkills, requirements } = job;
+
+  const { resumeId } = candidate;
+
+  const questions = await generateQuestionsForInterview({ title, role, experienceLevel, interviewGuideline, requiredSkills, requirements, resumeId: resumeId.toString() });
+
+  if (!questions || questions.length === 0) {
+    return responseHelper(res, 500, "Failed", "Failed to generate interview questions.");
+  }
+
+  const predefinedQuestions = [
+    `Hi ${candidate.fullName}, can you briefly introduce yourself and your recent work?`,
+    `That's great to hear ${candidate.fullName}, how would you describe your professional journey?`,
+    `give me a quick overview of your skills and experience.`
+  ];
+
+  const interviewQuestions = [...predefinedQuestions, ...questions.questions];
+
+  console.log("Interview Questions", interviewQuestions);
+  console.log("length of interview questions", interviewQuestions.length);
+
+
   const interview = await InterviewModel.create({
     candidateId: userId,
     jobId: job._id,
@@ -121,7 +172,11 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
     type: "live",
     scheduledDate: scheduledDate ? scheduledDateUTC : undefined,
     status: scheduledDate ? "scheduled" : "pending",
+    questions: interviewQuestions,
+    totalQuestions: interviewQuestions.length
   });
+
+  console.log("Interview", interview);
 
   if (!interview) {
     return responseHelper(res, 500, "Failed", "Failed to schedule interview.");
@@ -200,27 +255,28 @@ const getAllCandidateInterviews = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.userId;
 
+    // Pagination
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const status = req.query.status as string | undefined;
     const skip = (page - 1) * limit;
 
-    // const interviews = await InterviewModel.find({ candidateId: userId, ...(status ? { status } : {}) })
-    //   .populate("jobId", "title workMode deadline")
-    //   .populate("companyId", "companyName")
-    //   .sort({ scheduledDate: -1 })
-    //   .skip(skip)
-    //   .limit(limit);
+    // Filters
+    const status = req.query.status as string | undefined;
 
-    console.log("MEEEEEE")
+    // ✅ Combined match (ALL filters in ONE place)
+    const baseMatch = {
+      candidateId: new mongoose.Types.ObjectId(userId),
+      ...(status ? { status } : {}),
+    };
 
+    console.log("Base MATCH FILTER", baseMatch);
+
+    // ✅ Aggregation
     const interviews = await InterviewModel.aggregate([
       {
-        $match: {
-          candidateId: new mongoose.Types.ObjectId(userId),
-          ...(status ? { status } : {})
-        },
+        $match: baseMatch, // 🔥 ALL filters BEFORE pagination
       },
+
       {
         $lookup: {
           from: "jobs",
@@ -229,9 +285,8 @@ const getAllCandidateInterviews = asyncHandler(
           as: "job",
         },
       },
-      {
-        $unwind: "$job",
-      },
+      { $unwind: "$job" },
+
       {
         $lookup: {
           from: "companies",
@@ -240,6 +295,8 @@ const getAllCandidateInterviews = asyncHandler(
           as: "company",
         },
       },
+      { $unwind: "$company" },
+
       {
         $lookup: {
           from: "reports",
@@ -252,23 +309,51 @@ const getAllCandidateInterviews = asyncHandler(
         $unwind: {
           path: "$report",
           preserveNullAndEmptyArrays: true,
-        }
+        },
+      },
+
+      {
+        $lookup: {
+          from: "interviews",
+          let: { currentJobId: "$jobId" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$jobId", "$$currentJobId"] },
+              },
+            },
+            {
+              $group: {
+                _id: "$candidateId",
+              },
+            },
+            {
+              $count: "totalApplicants",
+            },
+          ],
+          as: "jobApplicantStats",
+        },
       },
       {
-        $unwind: "$company",
+        $addFields: {
+          totalApplicants: {
+            $ifNull: [{ $arrayElemAt: ["$jobApplicantStats.totalApplicants", 0] }, 0],
+          },
+        },
       },
+
       {
-        $sort: { scheduledDate: -1 },
+        $sort: { scheduledDate: 1 }, // sort AFTER filtering
       },
-      {
-        $skip: skip,
-      },
-      {
-        $limit: limit,
-      },
+
+      { $skip: skip },
+      { $limit: limit },
+
       {
         $project: {
           _id: 1,
+          rank: 1,
+          totalApplicants: 1,
           candidateId: 1,
           jobId: 1,
           companyId: 1,
@@ -276,27 +361,17 @@ const getAllCandidateInterviews = asyncHandler(
           scheduledDate: 1,
           status: 1,
           job: 1,
+          "company.companyName": 1,
+          "company.logoUrl": 1,
           "report._id": 1,
           "report.topStrengths": 1,
           "report.topWeaknesses": 1,
           "report.overallImprovementSuggestions": 1,
-          // "job.title": 1,
-          // "job.workMode": 1,
-          // "job.deadline": 1,
-          "company.companyName": 1,
-          "company.logoUrl": 1,
         },
-      }
-    ])
-    console.log("INTERVIEWS", interviews)
-    if (!interviews) {
-      return responseHelper(res, 500, "Failed", "Failed to fetch interviews.");
-    }
+      },
+    ]);
 
-    const totalInterviews = await InterviewModel.countDocuments({
-      candidateId: userId,
-      ...(status ? { status } : {})
-    });
+    const totalInterviews = await InterviewModel.countDocuments(baseMatch);
 
     return responseHelper(
       res,
@@ -310,8 +385,8 @@ const getAllCandidateInterviews = asyncHandler(
       },
       {
         total: totalInterviews,
-        page: page,
-        limit: limit,
+        page,
+        limit,
         totalPages: Math.ceil(totalInterviews / limit),
       }
     );
@@ -325,7 +400,7 @@ const getCandidateInterviewById = asyncHandler(
 
     const interview = await InterviewModel.findByIdAndUpdate(
       interviewId,
-      { status: "in-progress" }, // 1. The update object
+      { status: "scheduled" }, // 1. The update object
       { new: true, runValidators: true } // 2. Options: return the updated doc & validate
     )
       .populate("jobId", "title role workMode deadline")
@@ -352,7 +427,9 @@ const getCandidateInterviewById = asyncHandler(
 );
 
 const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Response) => {
-  const { interviewId, questionId, questionText, videoUrl, numberOfTabSwitch } = req.body;
+  const { interviewId, questionId, questionText, videoUrl, numberOfTabSwitch, verificationEvents } = req.body;
+
+  console.log("Received body:", req.body);
 
   if (!interviewId || !questionId || !questionText) {
     console.log("missing")
@@ -377,6 +454,13 @@ const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Res
     return responseHelper(res, 400, "Failed", "Question result already exists.");
   }
 
+  let verificationSummary = null;
+  if (verificationEvents) {
+    verificationSummary = generateVerificationSummary(verificationEvents);
+  }
+
+  console.log("verification summary", verificationSummary);
+
   // db call to create a new question result document
   const questionResult = await QuestionResultModel.create({
     interviewId,
@@ -384,6 +468,8 @@ const createInterviewQuestionResult = asyncHandler(async (req: Request, res: Res
     questionText,
     videoUrl,
     numberOfTabSwitch,
+    verificationSummary,
+    verificationEvents,
     stages: {
       uploaded: true,
       audioExtracted: false,
@@ -456,11 +542,41 @@ const createInterviewQuestionResultForSkipQuestions = asyncHandler(async (req: R
     return responseHelper(res, 400, "Failed", "Question result already exists.");
   }
 
-  // db call to create a new question result document
+  // Default LLM analysis for skipped questions
+  const defaultLLMAnalysis = {
+    scores: {
+      contentScore: 0,
+      communicationScore: 0,
+      fluencyScore: 0,
+      confidenceScore: 0,
+      overallScore: 0,
+    },
+    fluencyAssessment: {
+      grammarQuality: "",
+      speechFlow: "",
+      paceAssessment: "",
+      detectedIssues: [],
+    },
+    insights: {
+      strengths: [],
+      weaknesses: [],
+      missingConcepts: [],
+      improvementSuggestions: [],
+    },
+    answerQuality: "Skipped - No answer provided",
+    integrity: {
+      integrityConcern: false,
+      integrityNotes: null,
+    },
+    shortSummary: "Candidate skipped this question, so no answer was provided for analysis.",
+  };
+
+  // db call to create a new question result document with default LLM analysis
   const questionResult = await QuestionResultModel.create({
     interviewId,
     questionId,
     questionText,
+    lLMAnalysis: defaultLLMAnalysis,
     status: "DONE",
     stages: {
       uploaded: true,
@@ -469,8 +585,8 @@ const createInterviewQuestionResultForSkipQuestions = asyncHandler(async (req: R
       videoAnalyzed: true,
       llmEvaluated: true,
       done: true,
-      failed: false
-    }
+      failed: false,
+    },
   });
 
   if (!questionResult) {
@@ -480,6 +596,10 @@ const createInterviewQuestionResultForSkipQuestions = asyncHandler(async (req: R
       },
     });
   }
+
+  // Now increment the counter for completedQuestions in the interview document
+  interview.completedQuestions = (interview.completedQuestions || 0) + 1;
+  await interview.save();
 
   return responseHelper(res, 200, "Success", "Question result created successfully for skip question.", {
     data: {
@@ -564,6 +684,223 @@ const checkFaceVerification = asyncHandler(async (req: Request, res: Response) =
 
 });
 
+const sendHiringEmail = asyncHandler(async (req: Request, res: Response) => {
+  const { interviewId, emailQuery } = req.body;
+
+  if (!interviewId || !emailQuery) {
+    return responseHelper(res, 400, "Failed", "Missing required fields.");
+  }
+
+  const interview = await InterviewModel.findByIdAndUpdate(interviewId, {
+    status: "hired",
+  }, { new: true }).populate({
+    path: "candidateId",
+    select: "userId fullName contactNumber",
+    populate: {
+      path: "userId",
+      select: "email",
+    }
+  }).populate({
+    path: "companyId",
+    select: "userId companyName logoUrl",
+    populate: {
+      path: "userId",
+      select: "email",
+    }
+  });
+
+  if (!interview) {
+    return responseHelper(res, 404, "Failed", "Interview not found.");
+  }
+
+  const email = (interview.candidateId as any).userId.email;
+  const companyEmail = (interview.companyId as any).userId.email;
+  const companyName = (interview.companyId as any).companyName;
+  const candidateName = (interview.candidateId as any).fullName;
+  const logoUrl = (interview.companyId as any).logoUrl;
+  const contactNumber = (interview.candidateId as any).contactNumber;
+
+
+
+  const task = await TaskModel.create({
+    userId: req.userId,
+    type: "send_hiring_email",
+    payload: { email, emailQuery, companyEmail, companyName, candidateName, logoUrl, contactNumber },
+    status: "pending"
+  })
+
+  if (!task) {
+    console.log("ERROR :: Task not created for sending hiring email")
+    return;
+  }
+
+  sendToQueue(SEND_HIRING_EMAIL_QUEUE, task._id.toString());
+
+  return responseHelper(res, 200, "Success", "Hiring email is sent.", {
+    data: {
+      taskId: task._id,
+    },
+  });
+
+});
+
+
+const sendRejectionEmail = asyncHandler(async (req: Request, res: Response) => {
+  const { interviewId } = req.body;
+
+  if (!interviewId) {
+    return responseHelper(res, 400, "Failed", "Missing required fields.");
+  }
+
+  const interview = await InterviewModel.findByIdAndUpdate(interviewId, {
+    status: "rejected",
+  }, { new: true }).populate({
+    path: "candidateId",
+    select: "userId fullName",
+    populate: {
+      path: "userId",
+      select: "email",
+    }
+  }).populate({
+    path: "companyId",
+    select: "userId companyName logoUrl",
+    populate: {
+      path: "userId",
+      select: "email",
+    }
+  });
+
+  if (!interview) {
+    return responseHelper(res, 404, "Failed", "Interview not found.");
+  }
+
+  const email = (interview.candidateId as any).userId.email;
+  const companyEmail = (interview.companyId as any).userId.email;
+  const companyName = (interview.companyId as any).companyName;
+  const logoUrl = (interview.companyId as any).logoUrl;
+  const candidateName = (interview.candidateId as any).fullName;
+
+
+
+  const task = await TaskModel.create({
+    userId: req.userId,
+    type: "send_rejection_email",
+    payload: { email, companyEmail, companyName, candidateName, logoUrl },
+    status: "pending"
+  })
+
+  if (!task) {
+    console.log("ERROR :: Task not created for sending rejection email")
+    return;
+  }
+
+  sendToQueue(SEND_REJECTION_EMAIL_QUEUE, task._id.toString());
+
+  return responseHelper(res, 200, "Success", "Rejection email is sent.", {
+    data: {
+      taskId: task._id,
+    },
+  });
+
+});
+
+const endInterview = asyncHandler(async (req: Request, res: Response) => {
+  // Get the interview id from the req.body
+
+  const { interviewId } = req.body;
+
+  // Check the id is valid or not
+
+  if (!interviewId || !isValidObjectId(interviewId)) {
+    return responseHelper(res, 400, "Failed", "Missing interview ID.");
+  }
+
+  // Fetch the interview doc from the interviewModel based on the provided id
+
+  const interviewDoc = await InterviewModel.findById(interviewId);
+
+  // Check if the interview exists or not, if not return with error message
+
+  if (!interviewDoc) {
+    return responseHelper(res, 404, "Failed", "Interview not found.");
+  }
+
+  // Update the interview status to "end" and save the doc
+
+  interviewDoc.status = "ended";
+
+  await interviewDoc.save();
+
+  // Return the response with success message and updated interview data
+
+  return responseHelper(res, 200, "Success", "Your interview has ended.", {
+    data: null,
+  });
+})
+
+const markInterviewAsInProcess = asyncHandler(async (req: Request, res: Response) => {
+  const { interviewId } = req.body;
+
+  if (!interviewId || !isValidObjectId(interviewId)) {
+    console.log("Invalid interview ID for marking in process");
+    return;
+  }
+
+  const interview = await InterviewModel.findById(interviewId);
+
+  if (!interview) {
+    console.log("Interview not found for marking in process");
+    return;
+  }
+
+  interview.status = "in-process";
+
+  await interview.save();
+
+  return responseHelper(res, 200, "Success", "Interview marked as in process.", {
+    data: null,
+  });
+});
+
+const fetchInterviewQuestionResults = asyncHandler(async (req: Request, res: Response) => {
+  const { interviewId } = req.params;
+  if (!interviewId || !isValidObjectId(interviewId)) {
+    return responseHelper(res, 400, "Failed", "Invalid interview ID.");
+  }
+
+  const questionResults = await QuestionResultModel.find({ interviewId }, {
+    questionId: 1,
+    questionText: 1,
+    videoUrl: 1,
+    lLMAnalysis: 1,
+    "sttData.text": 1,
+  });
+
+  if (!questionResults) {
+    return responseHelper(res, 404, "Failed", "No question results found for this interview.");
+  }
+
+  const report = await ReportModel.findOne({ interviewId }, {
+    overallImprovementSuggestions: 1,
+    topStrengths: 1,
+    topWeaknesses: 1,
+    commonMissingConcepts: 1,
+    interviewSummary: 1,
+    pdfUrl: 1,
+  });
+
+  if (!report) {
+    console.log("No report found for interview ID:", interviewId);
+  }
+
+  return responseHelper(res, 200, "Success", "Question results fetched successfully.", {
+    data: {
+      questionResults,
+      report,
+    },
+  });
+});
+
 export {
   scheduleInterview,
   getTodayCandidateInterviews,
@@ -572,5 +909,10 @@ export {
   createInterviewQuestionResult,
   createInterviewQuestionResultForSkipQuestions,
   createLivenessCheck,
-  checkFaceVerification
+  checkFaceVerification,
+  sendHiringEmail,
+  sendRejectionEmail,
+  endInterview,
+  markInterviewAsInProcess,
+  fetchInterviewQuestionResults,
 };

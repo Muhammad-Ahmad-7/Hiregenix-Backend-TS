@@ -13,6 +13,8 @@ import chatRouter from "./routes/chat.route.js";
 import messageRouter from "./routes/message.route.js";
 import chatbotRouter from "./routes/companyChatBot.route.js";
 import generalRouter from "./routes/general.route.js";
+import taskRouter from "./routes/task.route.js";
+import limiter from "./middlewares/rateLimitor.middleware.js";
 const app = express();
 
 app.use(express.json());
@@ -38,6 +40,8 @@ app.use("/api/v1/upload", uploadRouter);
 app.use("/api/v1/job", jobRouter);
 app.use("/api/v1/interview", interviewRouter);
 app.use("/api/v1/chat", chatRouter);
+app.use("/api/v1/task", taskRouter);
+app.use(limiter);
 
 app.use("/api/v1/message", messageRouter);
 app.use(errorMiddleware);

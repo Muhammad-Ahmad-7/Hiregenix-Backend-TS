@@ -13,15 +13,15 @@ export interface IJob extends Document {
     aiSummary?: string;
     embeddingSynced?: boolean;
     qdrantId?: string;
-    requirements?: string[];
-    location?: {
-        city?: string;
+    requirements: string[];
+    location: {
+        city: string;
         country?: string;
     };
-    salaryRange?: {
-        min?: number;
-        max?: number;
-        currency?: string
+    salaryRange: {
+        min: number;
+        max: number;
+        currency?: string;
     };
     isDeleted?: boolean;
     status?: "open" | "closed";
@@ -62,7 +62,7 @@ const JobSchema = new Schema<IJob>({
     },
     requirements: {
         type: [String],
-        required: false
+        required: true
     },
     workMode: {
         type: String,
@@ -80,13 +80,16 @@ const JobSchema = new Schema<IJob>({
         },
         country: {
             type: String,
-            required: true
+            default: "Pakistan"
         }
     },
     salaryRange: {
         min: Number,
         max: Number,
-        currency: String
+        currency: {
+            type: String,
+            default: "PKR"
+        }
     },
     aiSummary: { // using llm to generate the summary of job for vectorization.
         type: String,

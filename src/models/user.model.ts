@@ -12,8 +12,8 @@ export interface IUser extends Document {
     password?: string; // only for local
     authProvider: "local" | "google" | "linkedin";
     providerId?: string; // for google/linkedin
-    resetPasswordToken: string | null;
-    resetPasswordExpires: Date | null;
+    resetPasswordOtp: string | null;
+    resetPasswordOtpExpires: Date | null;
     isVerified: boolean;
     verificationToken: string | null;
     verificationTokenExpires: Date | null;
@@ -46,8 +46,8 @@ const UserSchema = new Schema<IUser>(
         providerId: {
             type: String, // store Google/LinkedIn id here
         },
-        resetPasswordToken: { type: String, default: null },
-        resetPasswordExpires: { type: Date, default: null },
+        resetPasswordOtp: { type: String, default: null },
+        resetPasswordOtpExpires: { type: Date, default: null },
         isVerified: {
             type: Boolean,
             default: false,

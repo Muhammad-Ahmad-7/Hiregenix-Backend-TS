@@ -7,7 +7,9 @@ export const validateRequest = (schema: ZodTypeAny) => {
             await schema.parseAsync(req.body);
             return next();
         } catch (error) {
+            console.log("ERROR", error)
             if (error instanceof ZodError) {
+                console.log("ERROR2", error)
                 // Fix typing properly
                 const flattened = z.flattenError(error);
                 const fieldErrors: Record<string, string[] | undefined> = flattened.fieldErrors;

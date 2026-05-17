@@ -35,17 +35,12 @@ const getChats = asyncHandler(async (req: Request, res: Response) => {
   // 2️⃣ Update All "sent" Messages → "delivered"
   // ==========================================
   const chatIds = chats.map((chat: any) => chat._id);
-  let user = await CompanyModel.findOne({ userId: { _id: currentUserId } });
-  if (!user) {
-    user = await CandidateModel.findOne({ userId: { _id: currentUserId } });
-  }
 
   console.log("i am current user=", currentUserId);
-  console.log("is this sender=", user?._id);
   await Message.updateMany(
     {
       chat: { $in: chatIds },
-      sender: { $ne: user?._id },
+      sender: { $ne: currentUserId },
       status: "sent",
     },
     { $set: { status: "delivered" } },
@@ -56,9 +51,13 @@ const getChats = asyncHandler(async (req: Request, res: Response) => {
   // ==========================================
   const formattedChats = await Promise.all(
     chats.map(async (chat: any) => {
-      const otherParticipantData = chat.participants.find(
-        (p: any) => p.userId._id.toString() !== currentUserId.toString(),
-      );
+      const otherParticipantData = chat.participants.find((p: any) => {
+        const participantUserId = p?.userId?._id;
+        return (
+          participantUserId &&
+          participantUserId.toString() !== currentUserId.toString()
+        );
+      });
 
       if (!otherParticipantData) return null;
 
@@ -85,13 +84,13 @@ const getChats = asyncHandler(async (req: Request, res: Response) => {
         role: otherParticipantData.userId.role,
         ...(otherParticipantData.userType === "candidate"
           ? {
-            fullName: participantProfile?.fullName,
-            profilePictureUrl: participantProfile?.profilePictureUrl,
-          }
+              fullName: participantProfile?.fullName,
+              profilePictureUrl: participantProfile?.profilePictureUrl,
+            }
           : {
-            companyName: participantProfile?.companyName,
-            logoUrl: participantProfile?.logoUrl,
-          }),
+              companyName: participantProfile?.companyName,
+              logoUrl: participantProfile?.logoUrl,
+            }),
       };
 
       return {
@@ -137,7 +136,9 @@ const getOrCreateChat = asyncHandler(async (req: Request, res: Response) => {
   }
 
   if (Array.isArray(participantId)) {
-    return res.status(400).json({ message: "Participant id must be a single value" });
+    return res
+      .status(400)
+      .json({ message: "Participant id must be a single value" });
   }
 
   // Validate participant ID
@@ -224,9 +225,19 @@ const getOrCreateChat = asyncHandler(async (req: Request, res: Response) => {
   }
 
   // Find the other participant
-  const otherParticipantData = (chat as any).participants.find(
-    (p: any) => p.userId._id.toString() !== currentUserId.toString(),
-  );
+  const otherParticipantData = (chat as any).participants.find((p: any) => {
+    const participantUserId = p?.userId?._id;
+    return (
+      participantUserId &&
+      participantUserId.toString() !== currentUserId.toString()
+    );
+  });
+
+  if (!otherParticipantData?.userId?._id) {
+    return res.status(500).json({
+      message: "Unable to resolve chat participant",
+    });
+  }
 
   let participantProfile: any = null;
 
@@ -252,13 +263,13 @@ const getOrCreateChat = asyncHandler(async (req: Request, res: Response) => {
     role: otherParticipantData.userId.role,
     ...(otherParticipantData.userType === "candidate"
       ? {
-        fullName: participantProfile?.fullName,
-        profilePictureUrl: participantProfile?.profilePictureUrl,
-      }
+          fullName: participantProfile?.fullName,
+          profilePictureUrl: participantProfile?.profilePictureUrl,
+        }
       : {
-        companyName: participantProfile?.companyName,
-        logoUrl: participantProfile?.logoUrl,
-      }),
+          companyName: participantProfile?.companyName,
+          logoUrl: participantProfile?.logoUrl,
+        }),
   };
 
   const formattedChat = {
