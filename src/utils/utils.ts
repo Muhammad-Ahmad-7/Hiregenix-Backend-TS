@@ -73,7 +73,7 @@ export function generateVerificationSummary(
     let maxConsecutiveLowScores = 0;
 
     const LOW_CONFIDENCE_THRESHOLD = 70;
-    const HIGH_RISK_MISSING_DURATION = 10000;
+    const HIGH_RISK_MISSING_DURATION = 5000;
 
     for (const event of events) {
 
@@ -178,6 +178,13 @@ export function generateVerificationSummary(
     if (integrityScore < 50) riskLevel = "critical";
     else if (integrityScore < 70) riskLevel = "high";
     else if (integrityScore < 90) riskLevel = "medium";
+
+    const hasLongFaceMissingGap = longestFaceMissingDurationMs > HIGH_RISK_MISSING_DURATION;
+    const hasRepeatedFaceMismatch = failedVerifications > 2;
+
+    if ((hasLongFaceMissingGap || hasRepeatedFaceMismatch) && riskLevel !== "critical") {
+        riskLevel = "high";
+    }
 
     return {
         integrityScore,

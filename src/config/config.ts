@@ -12,7 +12,7 @@ dotenv.config({ path: path.join(__dirname, "../../.env") });
 interface Config {
   port: string | number;
   HF_MODEL: string;
-  HF_TOKEN:string;
+  HF_TOKEN: string;
   mongodb: {
     uri: string;
   };
@@ -35,6 +35,7 @@ interface Config {
     url: string | undefined;
     dockerUrl: string | undefined;
     prodDevUrl: string | undefined;
+    prodUrl: string | undefined;
   };
   cloudinary: {
     cloudName: string | undefined;
@@ -92,6 +93,7 @@ export const config: Config = {
     url: process.env.FRONTEND_URL,
     dockerUrl: process.env.FRONTEND_DOCKER_URL,
     prodDevUrl: process.env.FRONTEND_PROD_DEV_URL,
+    prodUrl: process.env.FRONTEND_PROD_PROD_URL,
   },
   cloudinary: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,
