@@ -25,6 +25,7 @@ app.use(
       config.frontend.url!,
       config.frontend.dockerUrl!,
       config.frontend.prodDevUrl!,
+      config.frontend.prodUrl!,
     ],
     credentials: true,
   }),
