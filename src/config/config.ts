@@ -33,9 +33,6 @@ interface Config {
   };
   frontend: {
     url: string | undefined;
-    dockerUrl: string | undefined;
-    prodDevUrl: string | undefined;
-    prodUrl: string | undefined;
   };
   cloudinary: {
     cloudName: string | undefined;
@@ -91,9 +88,6 @@ export const config: Config = {
   },
   frontend: {
     url: process.env.FRONTEND_URL,
-    dockerUrl: process.env.FRONTEND_DOCKER_URL,
-    prodDevUrl: process.env.FRONTEND_PROD_DEV_URL,
-    prodUrl: process.env.FRONTEND_PROD_PROD_URL,
   },
   cloudinary: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,
