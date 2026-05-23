@@ -17,8 +17,7 @@ export const initializeSocket = (httpServer: HttpServer) => {
 
   const io = new SocketServer(httpServer, {
     cors: { origin: allowedOrigins },
-    pingInterval: 10000, // 10s
-    pingTimeout: 5000, // 5s
+    transports: ["websocket"],
   });
 
   // verify socket connection - if the user is authenticated, we will store the user id in the socket
