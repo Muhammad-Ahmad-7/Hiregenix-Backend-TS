@@ -8,6 +8,9 @@
 - Express
 - MongoDB
 - Mongoose
+- Node Cron
+- Rabbitmq
+- QdrantDB
 
 ### Authentication and Authorization
 - bcrypt for password hashing
