@@ -159,7 +159,6 @@ const updateCandidateProfile = asyncHandler(
       githubUrl,
       linkedinUrl,
       portfolioUrl,
-      skills,
       bio,
       tagline,
     } = req.body;
@@ -178,10 +177,9 @@ const updateCandidateProfile = asyncHandler(
         githubUrl: githubUrl || existingCandidate.githubUrl,
         linkedinUrl: linkedinUrl || existingCandidate.linkedinUrl,
         portfolioUrl: portfolioUrl || existingCandidate.portfolioUrl,
-        skills: skills || existingCandidate.skills,
         bio: bio || existingCandidate.bio,
         tagline: tagline || existingCandidate.tagline,
-        resumeId: null,
+        resumeId: existingCandidate.resumeId,
       },
       { new: true },
     ).populate("userId", "email role");
