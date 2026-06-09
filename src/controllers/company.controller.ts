@@ -37,7 +37,6 @@ const completeCompanyProfile = asyncHandler(
     const {
       companyName,
       city,
-      contactEmail,
       country,
       description,
       foundedYear,
@@ -53,7 +52,7 @@ const completeCompanyProfile = asyncHandler(
       {
         companyName,
         city,
-        contactEmail,
+        contactEmail: req.user.email, // TODO: we need to see this.
         country,
         description,
         foundedYear,
