@@ -246,7 +246,7 @@ const updatedCompanyProfile = asyncHandler(
       {
         companyName: companyName || existingCompany.companyName,
         city: city || existingCompany.city,
-        contactEmail: contactEmail || existingCompany.contactEmail,
+        contactEmail: req.user.email,
         country: country || existingCompany.country,
         description: description || existingCompany.description,
         foundedYear: foundedYear || existingCompany.foundedYear,
@@ -255,6 +255,7 @@ const updatedCompanyProfile = asyncHandler(
         ntnNumber: ntnNumber || existingCompany.ntnNumber,
         techStack: techStack || existingCompany.techStack,
         website: website || existingCompany.website,
+        isProfileCompleted: true,
       },
       { new: true },
     );
