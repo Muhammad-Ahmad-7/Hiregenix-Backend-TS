@@ -36,7 +36,7 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   const resume = await ResumeModel.findOne({ candidateId: userId });
 
   if (!resume) {
-    return responseHelper(res, 400, "Failed", "Candidate profile is incomplete. Resume not found.");
+    return responseHelper(res, 400, "Failed", "Resume not found. Please upload your resume before scheduling an interview.");
   }
 
   if (!candidate.resumeId) {
@@ -195,7 +195,6 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   );
 });
 
-// const rescheduleInterview = asyncHandler()
 
 const getTodayCandidateInterviews = asyncHandler(
   async (req: Request, res: Response) => {
@@ -212,19 +211,7 @@ const getTodayCandidateInterviews = asyncHandler(
       .toUTC()
       .toJSDate();
 
-    console.log("Start of day in UTC:", startZone);
-    console.log("End of day in UTC:", endZone);
-
     const userId = req.userId;
-
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-
-    console.log("Start of day:", start);
-    console.log("End of day:", end);
 
     const interviews = await InterviewModel.find({
       candidateId: userId,
