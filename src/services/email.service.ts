@@ -1,22 +1,16 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import fs from 'fs/promises';
 import path, { dirname } from 'path';
 import { config } from '../config/config.js';
 import { fileURLToPath } from 'url';
 
 export class EmailService {
-    // Create a transporter object using the default SMTP transport
-    private static transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: config.email.user,
-            pass: config.email.pass,
-        },
-        debug: true,
-        logger: true
-    });
+    private static resend = new Resend(process.env.RESEND_API_KEY);
 
-    // Read and return the email template content from the specified file
+    private static getFromEmail(): string {
+        return process.env.EMAIL_FROM || `"HireGenix" <noreply@mail.hiregenix.dev>`;
+    }
+
     private static async getTemplate(templateName: string): Promise<string> {
         const __filename = fileURLToPath(import.meta.url);
         const __dirname = dirname(__filename);
@@ -24,7 +18,6 @@ export class EmailService {
         return await fs.readFile(templatePath, 'utf-8');
     }
 
-    // Replace variables in the template with actual values
     private static replaceTemplateVariables(template: string, variables: Record<string, string>): string {
         return Object.entries(variables).reduce(
             (acc, [key, value]) => acc.replace(new RegExp(`{{${key}}}`, 'g'), value),
@@ -32,19 +25,21 @@ export class EmailService {
         );
     }
 
-    // Verify the SMTP connection
     static async verifyConnection(): Promise<boolean> {
         try {
-            await this.transporter.verify();
-            console.log('SMTP connection verified successfully');
+            if (!process.env.RESEND_API_KEY) {
+                console.error('RESEND_API_KEY is missing');
+                return false;
+            }
+
+            console.log('Resend API key found. Email service ready.');
             return true;
         } catch (error) {
-            console.error('SMTP connection verification failed:', error);
+            console.error('Resend verification failed:', error);
             return false;
         }
     }
 
-    // Send a verification email to the specified recipient
     static async sendVerificationEmail(
         to: string,
         name: string,
@@ -59,22 +54,25 @@ export class EmailService {
                 verificationLink,
             });
 
-            const mailOptions = {
-                from: `"Hiregenix" <${config.email.user}>`,
-                to,
+            const { data, error } = await this.resend.emails.send({
+                from: this.getFromEmail(),
+                to: [to],
                 subject: 'Verify Your Email',
                 html,
-            };
+            });
 
-            const info = await this.transporter.sendMail(mailOptions);
-            console.log('Verification email sent successfully:', info.messageId);
+            if (error) {
+                console.error('Resend verification email error:', error);
+                throw error;
+            }
+
+            console.log('Verification email sent successfully:', data?.id);
         } catch (error) {
             console.error('Error sending verification email:', error);
             throw new Error('Failed to send verification email');
         }
     }
 
-    // Send a password reset email to the specified recipient
     static async sendPasswordResetOtp(
         to: string,
         name: string,
@@ -89,15 +87,19 @@ export class EmailService {
                 year: new Date().getFullYear().toString()
             });
 
-            const mailOptions = {
-                from: `"Hiregenix" <${config.email.user}>`,
-                to,
+            const { data, error } = await this.resend.emails.send({
+                from: this.getFromEmail(),
+                to: [to],
                 subject: 'Reset Your Password',
                 html,
-            };
+            });
 
-            const info = await this.transporter.sendMail(mailOptions);
-            console.log('Password reset OTP email sent successfully:', info.messageId);
+            if (error) {
+                console.error('Resend password reset email error:', error);
+                throw error;
+            }
+
+            console.log('Password reset OTP email sent successfully:', data?.id);
         } catch (error) {
             console.error('Error sending password reset OTP email:', error);
             throw new Error('Failed to send password reset OTP email');
@@ -140,20 +142,23 @@ export class EmailService {
                 year: new Date().getFullYear().toString()
             });
 
-            const mailOptions = {
-                from: `"Hiregenix" <${config.email.user}>`,
-                to,
+            const { data, error } = await this.resend.emails.send({
+                from: this.getFromEmail(),
+                to: [to],
                 subject: `Reminder: Interview for ${jobTitle}`,
                 html,
-            };
+            });
 
-            const info = await this.transporter.sendMail(mailOptions);
-            console.log('Interview reminder email sent successfully:', info.messageId);
+            if (error) {
+                console.error('Resend interview reminder email error:', error);
+                throw error;
+            }
+
+            console.log('Interview reminder email sent successfully:', data?.id);
 
         } catch (error) {
             console.error("Error sending interview reminder email:", error);
             throw new Error("Failed to send interview reminder email");
         }
     }
-
 }

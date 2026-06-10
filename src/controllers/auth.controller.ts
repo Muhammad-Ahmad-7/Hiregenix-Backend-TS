@@ -9,6 +9,7 @@ import CandidateModel from "../models/candidate.model.js";
 import CompanyModel from "../models/company.model.js";
 import axios from "axios";
 import oauth2Client from "../utils/googleClient.js";
+import { sendVerificationEmail } from "../services/resend.email.service.js";
 
 
 const signup = asyncHandler(async (req: Request, res: Response) => {
@@ -41,6 +42,7 @@ const signup = asyncHandler(async (req: Request, res: Response) => {
     try {
         // Send verification email
         await EmailService.sendVerificationEmail(email, "User", verificationToken);
+        // await sendVerificationEmail(email, verificationToken);
         console.log('Verification email sent successfully.');
         return responseHelper(res, 201, "Success", "Registration successful. Please check your email to verify your account.")
     } catch (emailError) {
