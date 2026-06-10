@@ -5,6 +5,7 @@ import { getChannel, sendToQueue } from "../config/rabbitmq.js";
 import {
   CANDIDATE_PROFILE_EMBEDDINGS_QUEUE,
   RESUME_QUEUE,
+  TIMEZONE,
 } from "../utils/constant.js";
 import cloudinary from "../config/cloudinary.js";
 
@@ -15,6 +16,7 @@ import { RecommendedJobModel } from "../models/recommended_jobs.model.js";
 import { JobModel } from "../models/job.model.js";
 import ResumeModel from "../models/resume.model.js";
 import { InterviewModel } from "../models/interview.model.js";
+import { DateTime } from "luxon";
 
 const completeCandidateProfile = asyncHandler(
   async (req: Request, res: Response) => {
@@ -823,19 +825,28 @@ const getCandidateDashboardStats = asyncHandler(
       .limit(5)
       .populate("jobId");
 
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
+    const startZone = DateTime.now()
+      .setZone(TIMEZONE) // right now its set for pakistan only, we can make it dynamic based on user preference in future
+      .startOf("day")
+      .toUTC()
+      .toJSDate();
 
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
+    const endZone = DateTime.now()
+      .setZone(TIMEZONE)
+      .endOf("day")
+      .toUTC()
+      .toJSDate();
 
     const interviews = await InterviewModel.find({
       candidateId: userId,
-      scheduledDate: { $gte: start, $lte: end },
+      scheduledDate: { $gte: startZone, $lte: endZone },
     })
       .populate("jobId")
       .populate("companyId")
       .sort({ scheduledDate: -1 });
+
+    const recommendedJobs = await RecommendedJobModel.findOne({ candidateId: userId })
+    const matchedJobs = recommendedJobs?.recommendedJobs.length || 0;
 
     return responseHelper(
       res,
@@ -847,7 +858,7 @@ const getCandidateDashboardStats = asyncHandler(
           userAppliedJobsCount: userAppliedJobsCount || 0,
           resumeScore: resumeData?.aiScore || 0,
           userActiveJobsCount: userActiveJobsCount || 0,
-          matchedJobsCounts: 10,
+          matchedJobsCounts: matchedJobs,
           recentAppliedJobs: recentAppliedJobs || [],
           getTodaysInterview: interviews || [],
         },

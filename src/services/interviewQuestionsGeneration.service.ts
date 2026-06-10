@@ -31,17 +31,6 @@ async function generateQuestionsForInterview({ title, role, experienceLevel, int
 
         // Build the prompt using the above information
 
-        // console.log("----------------")
-        // console.log(`Role ${role}`)
-        // console.log(`Experience Level ${experienceLevel}`)
-        // console.log(`Interview Guideline ${interviewGuideline}`)
-        // console.log(`Required Skills ${requiredSkills.join(", ")}`)
-        // console.log(`Requirements ${requirements.join(", ")}`)
-        // console.log(`Projects ${projects ? JSON.stringify(projects) : "No projects listed"}`)
-        // console.log(`Experience ${experience ? JSON.stringify(experience) : "No experience listed"}`)
-        // console.log(`Summary ${summary ? summary : "No summary provided"}`)
-        // console.log("----------------")
-
         const prompt = QUESTIONS_GENERATION_PROMPT_TEMPLATE.replace("{jobTitle}", title)
             .replace("{jobRole}", role)
             .replace("{experienceLevel}", experienceLevel)
@@ -82,16 +71,13 @@ const questionSchema = z.object({
 const QUESTIONS_GENERATION_PROMPT_TEMPLATE = `
     You are a senior technical recruiter conducting a live, one-to-one interview.
 
-    Your task is to generate concise, natural, verbally askable interview questions.
+    Your task is to generate concise, natural, verbally ask-able interview questions.
 
     -------------------------
     OBJECTIVE
     -------------------------
     Generate exactly 10 interview questions that assess:
     - Technical understanding
-    - Real-world thinking
-    - Authentic past experience
-    - Role fit
 
     -------------------------
     RULES (STRICT)
@@ -110,6 +96,8 @@ const QUESTIONS_GENERATION_PROMPT_TEMPLATE = `
     3. Remaining 9 questions:
     - Based on role, skills, and requirements
     - Focus on practical and technical understanding
+    - Avoid hypothetical or abstract questions
+    - Prioritize questions that are definition based.
 
     4. Avoid:
     - Multi-part questions
@@ -160,6 +148,25 @@ const QUESTIONS_GENERATION_PROMPT_TEMPLATE = `
     Candidate Projects: {projects}
     Candidate Experience: {experience}
     Candidate Resume Summary: {summary}
+
+    ------------------------
+    EXAMPLE QUESTIONS
+    -------------------------
+    For a Senior Backend Developer role with required skills in Node.js, REST APIs, databases, and server-side logic, and an interview guideline to assess knowledge of these areas, the questions might look like:
+    {
+        "questions": [
+            "What is your experience with Node.js and how have you used it in your projects?",
+            "Can you explain how you design and implement REST APIs?",
+            "What databases have you worked with and how do you choose which one to use?",
+            "How do you ensure the scalability and performance of your backend systems?",
+            "Define idempotency in the context of REST APIs and why it is important.",
+            "What are the key principles of server-side logic design?",
+            "Define the concept of middleware in backend engineering and provide an example of its use.",
+            "Explain the internal working of the event loop in Node.js and how it handles asynchronous operations.",
+            "What strategies do you use for error handling in your backend applications?",
+            "How do you approach database schema design for a new application?"
+        ]
+    }
 `;
 
 // generateQuestionsForInterview({

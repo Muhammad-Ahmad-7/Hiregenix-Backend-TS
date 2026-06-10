@@ -38,15 +38,16 @@ export async function generateJobDescription({ jobTitle, jobRole, experienceLeve
     const structuredLlm = llm.withStructuredOutput(JobDescriptionSchema);
 
     const prompt = `
-    Act as a Technical Recruiter. Create a professional JD for:
+    Act as a Technical Recruiter. Create a professional Job Description for:
     - Title: ${jobTitle}
     - Role: ${jobRole}
     - Experience: ${experienceLevel}
     - Mode: ${workMode}
     - Required Skills: ${skills}
 
-    Provide a concise Role Overview, Responsibilities, and Technical Requirements.
+    Provide a concise Role Overview and Responsibilities.
     Ensure the tone matches the ${experienceLevel} seniority level.
+    Your response should be in a paragraph format, not in bullet points.
 `;
 
     try {
@@ -136,7 +137,7 @@ export async function generateRequirements({ jobTitle, experienceLevel, skills }
     ]
     }
 
-    Max Array Length: 10
+    Max Array Length: 5-8 items, focusing on the most critical requirements for the role.
     `;
 
     try {
