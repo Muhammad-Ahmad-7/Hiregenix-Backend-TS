@@ -449,7 +449,7 @@ const getCompanyOpenJobs = asyncHandler(async (req: Request, res: Response) => {
     ]).sort({ createdAt: -1 }).limit(limit).skip(skip);
 
     if (!findActiveJobs || findActiveJobs.length === 0) {
-        return responseHelper(res, 404, "Failed", "No active jobs found.");
+        return responseHelper(res, 200, "Success", "No active jobs found.");
     }
 
     const totalActiveJobs = await JobModel.countDocuments({ status: "open", companyId, isDeleted: false });
@@ -486,7 +486,7 @@ const getCompanyClosedJobs = asyncHandler(async (req: Request, res: Response) =>
 
     const findClosedJobs = await JobModel.find({ status: "closed", companyId: userId, isDeleted: false }).sort({ updatedAt: -1 }).limit(limit).skip(skip);
     if (!findClosedJobs || findClosedJobs.length === 0) {
-        return responseHelper(res, 404, "Failed", "No closed jobs found.");
+        return responseHelper(res, 200, "Success", "No closed jobs found.");
     }
 
     const totalClosedJobs = await JobModel.countDocuments({ status: "closed", companyId, isDeleted: false });
