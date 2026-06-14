@@ -165,25 +165,28 @@ const updateCandidateProfile = asyncHandler(
       tagline,
     } = req.body;
 
+    console.log("REQ BODY", req.body)
+
+    const updateData = {
+      fullName: fullName ?? existingCandidate.fullName ?? "Placeholder Name",
+      dateOfBirth: dateOfBirth ?? existingCandidate.dateOfBirth ?? null,
+      gender: gender ?? existingCandidate.gender ?? null,
+      country: country ?? existingCandidate.country ?? "Pakistan",
+      city: city ?? existingCandidate.city ?? null,
+      contactNumber: contactNumber ?? existingCandidate.contactNumber ?? null,
+      profilePictureUrl: profilePictureUrl ?? existingCandidate.profilePictureUrl ?? null,
+      githubUrl: githubUrl ?? existingCandidate.githubUrl ?? null,
+      linkedinUrl: linkedinUrl ?? existingCandidate.linkedinUrl ?? null,
+      portfolioUrl: portfolioUrl ?? existingCandidate.portfolioUrl ?? null,
+      bio: bio ?? existingCandidate.bio ?? null,
+      tagline: tagline ?? existingCandidate.tagline ?? null,
+      resumeId: existingCandidate.resumeId,
+    };
+
     const updatedCandidate = await CandidateModel.findByIdAndUpdate(
       existingCandidate._id,
-      {
-        fullName: fullName || existingCandidate.fullName,
-        dateOfBirth: dateOfBirth || existingCandidate.dateOfBirth,
-        gender: gender || existingCandidate.gender,
-        country: country || existingCandidate.country,
-        city: city || existingCandidate.city,
-        contactNumber: contactNumber || existingCandidate.contactNumber,
-        profilePictureUrl:
-          profilePictureUrl || existingCandidate.profilePictureUrl,
-        githubUrl: githubUrl || existingCandidate.githubUrl,
-        linkedinUrl: linkedinUrl || existingCandidate.linkedinUrl,
-        portfolioUrl: portfolioUrl || existingCandidate.portfolioUrl,
-        bio: bio || existingCandidate.bio,
-        tagline: tagline || existingCandidate.tagline,
-        resumeId: existingCandidate.resumeId,
-      },
-      { new: true },
+      { $set: updateData },
+      { new: true }
     ).populate("userId", "email role");
 
     if (!updatedCandidate) {

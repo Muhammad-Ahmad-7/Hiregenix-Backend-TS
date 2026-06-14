@@ -218,7 +218,6 @@ const updatedCompanyProfile = asyncHandler(
     const {
       companyName,
       city,
-      contactEmail,
       country,
       description,
       foundedYear,
@@ -229,32 +228,20 @@ const updatedCompanyProfile = asyncHandler(
       website,
     } = req.body;
 
-    // if (companyName) {
-    //   const findCompanyByName = await CompanyModel.findOne({ companyName });
-    //   if (findCompanyByName) {
-    //     return responseHelper(
-    //       res,
-    //       400,
-    //       "Failed",
-    //       "Company with the same already exist.",
-    //     );
-    //   }
-    // }
-
     const updatedCompany = await CompanyModel.findByIdAndUpdate(
       existingCompany._id,
       {
-        companyName: companyName || existingCompany.companyName,
-        city: city || existingCompany.city,
+        companyName: companyName ?? existingCompany.companyName ?? "Placeholder Company Name",
+        city: city ?? existingCompany.city ?? null,
         contactEmail: req.user.email,
-        country: country || existingCompany.country,
-        description: description || existingCompany.description,
-        foundedYear: foundedYear || existingCompany.foundedYear,
-        linkedInUrl: linkedInUrl || existingCompany.linkedInUrl,
-        logoUrl: logoUrl || existingCompany.logoUrl,
-        ntnNumber: ntnNumber || existingCompany.ntnNumber,
-        techStack: techStack || existingCompany.techStack,
-        website: website || existingCompany.website,
+        country: country ?? existingCompany.country ?? null,
+        description: description ?? existingCompany.description ?? null,
+        foundedYear: foundedYear ?? existingCompany.foundedYear ?? null,
+        linkedInUrl: linkedInUrl ?? existingCompany.linkedInUrl ?? null,
+        logoUrl: logoUrl ?? existingCompany.logoUrl ?? null,
+        ntnNumber: ntnNumber ?? existingCompany.ntnNumber ?? null,
+        techStack: techStack ?? existingCompany.techStack ?? null,
+        website: website ?? existingCompany.website ?? null,
         isProfileCompleted: true,
       },
       { new: true },
