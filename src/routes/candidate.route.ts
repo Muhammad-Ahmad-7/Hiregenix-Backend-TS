@@ -9,13 +9,13 @@ import { candidateProfileCreationSchema, candidateUpdateProfileSchema } from "..
 const candidateRouter = express.Router();
 
 candidateRouter.get("/all", getAllCandidates);
-candidateRouter.get("/get-resume-parsed-data/:id",  getResumeParsedData);
-candidateRouter.get("/profile/:userId",  getCandidateProfileById);
+candidateRouter.get("/get-resume-parsed-data/:id", getResumeParsedData);
+candidateRouter.get("/profile/:userId", getCandidateProfileById);
 candidateRouter.post("/complete-profile", isLoggedIn, validateRequest(candidateProfileCreationSchema), completeCandidateProfile);
 
 candidateRouter.get("/profile", isLoggedIn, getCandidateProfile);
 candidateRouter.patch("/update-profile", isLoggedIn, validateRequest(candidateUpdateProfileSchema), updateCandidateProfile);
-candidateRouter.post("/resume", isLoggedIn, isResumeAlreadyUploaded, upload.single("file"), resumeParser);
+candidateRouter.post("/resume", isLoggedIn, upload.single("file"), resumeParser);
 candidateRouter.get("/get-resume-parsed-data", isLoggedIn, getResumeParsedData);
 candidateRouter.get("/get-candidate-dashboard-stats", isLoggedIn, isCandidate, getCandidateDashboardStats);
 candidateRouter.post("/add-resume-data", isLoggedIn, addResumeData);
