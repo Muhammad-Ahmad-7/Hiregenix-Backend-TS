@@ -102,27 +102,27 @@ const completeCandidateProfile = asyncHandler(
       );
     }
 
-    const task = await TaskModel.create({
-      userId: req.user._id,
-      type: "candidate_profile_embeddings",
-      payload: { candidateId: candidate._id.toString() },
-      status: "pending",
-    });
+    // const task = await TaskModel.create({
+    //   userId: req.user._id,
+    //   type: "candidate_profile_embeddings",
+    //   payload: { candidateId: candidate._id.toString() },
+    //   status: "pending",
+    // });
 
-    if (!task) {
-      console.log("ERROR :: Task not created");
-      return;
-    }
+    // if (!task) {
+    //   console.log("ERROR :: Task not created");
+    //   return;
+    // }
 
-    try {
-      sendToQueue(
-        CANDIDATE_PROFILE_EMBEDDINGS_QUEUE,
-        task._id.toString(),
-      );
-      console.log("Message sent to RabbitMQ queue successfully");
-    } catch (error) {
-      console.error("RabbitMQ error:", error);
-    }
+    // try {
+    //   sendToQueue(
+    //     CANDIDATE_PROFILE_EMBEDDINGS_QUEUE,
+    //     task._id.toString(),
+    //   );
+    //   console.log("Message sent to RabbitMQ queue successfully");
+    // } catch (error) {
+    //   console.error("RabbitMQ error:", error);
+    // }
 
     return responseHelper(
       res,
@@ -199,22 +199,22 @@ const updateCandidateProfile = asyncHandler(
       );
     }
 
-    const task = await TaskModel.create({
-      userId: req.user._id,
-      type: "candidate_profile_embeddings",
-      payload: { candidateId: updatedCandidate._id.toString() },
-      status: "pending",
-    });
+    // const task = await TaskModel.create({
+    //   userId: req.user._id,
+    //   type: "candidate_profile_embeddings",
+    //   payload: { candidateId: updatedCandidate._id.toString() },
+    //   status: "pending",
+    // });
 
-    if (!task) {
-      console.log("ERROR :: Task not created");
-      return;
-    }
+    // if (!task) {
+    //   console.log("ERROR :: Task not created");
+    //   return;
+    // }
 
-    sendToQueue(
-      CANDIDATE_PROFILE_EMBEDDINGS_QUEUE,
-      task._id.toString(),
-    );
+    // sendToQueue(
+    //   CANDIDATE_PROFILE_EMBEDDINGS_QUEUE,
+    //   task._id.toString(),
+    // );
 
     return responseHelper(
       res,
