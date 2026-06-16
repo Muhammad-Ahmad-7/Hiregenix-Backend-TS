@@ -181,6 +181,7 @@ const updateCandidateProfile = asyncHandler(
       bio: bio ?? existingCandidate.bio ?? null,
       tagline: tagline ?? existingCandidate.tagline ?? null,
       resumeId: existingCandidate.resumeId,
+      isProfileCompleted: true,
     };
 
     const updatedCandidate = await CandidateModel.findByIdAndUpdate(
@@ -387,7 +388,7 @@ const getResumeParsedData = asyncHandler(
     }
     const resume = await ResumeModel.findById(candidate.resumeId?.toString());
     if (!resume) {
-      return responseHelper(res, 404, "Failed", "Resume not found.");
+      return responseHelper(res, 404, "Failed", "Resume not found. Please upload resume to access full features.");
     }
 
     return responseHelper(
