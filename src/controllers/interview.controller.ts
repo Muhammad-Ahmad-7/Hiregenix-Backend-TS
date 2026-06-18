@@ -154,9 +154,9 @@ const scheduleInterview = asyncHandler(async (req: Request, res: Response) => {
   }
 
   const predefinedQuestions = [
-    `Hi ${candidate.fullName}, can you briefly introduce yourself and your recent work?`,
-    `That's great to hear ${candidate.fullName}, how would you describe your professional journey?`,
-    `give me a quick overview of your skills and experience.`
+    `Hi ${candidate.fullName}, please introduce yourself.`,
+    `Can you tell us about your education and any work or project experience?`,
+    `What skills, tools, or technologies do you know and use regularly?`
   ];
 
   const interviewQuestions = [...predefinedQuestions, ...questions.questions];
