@@ -1,5 +1,5 @@
 import amqb from "amqplib";
-import { RESUME_QUEUE, SPEECH_TO_TEXT_QUEUE, CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, JOB_DESCRIPTION_EMBEDDINGS_QUEUE, LIVENESS_CHECK_QUEUE, SEND_HIRING_EMAIL_QUEUE, SEND_REJECTION_EMAIL_QUEUE, COMPANY_KB_EMBEDDINGS_QUEUE } from "../utils/constant.js";
+import { RESUME_QUEUE, SPEECH_TO_TEXT_QUEUE, CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, JOB_DESCRIPTION_EMBEDDINGS_QUEUE, JOB_RECOMMENDATION_QUEUE, LIVENESS_CHECK_QUEUE, SEND_HIRING_EMAIL_QUEUE, SEND_REJECTION_EMAIL_QUEUE, COMPANY_KB_EMBEDDINGS_QUEUE } from "../utils/constant.js";
 
 export let channel: amqb.Channel | null = null;
 
@@ -23,6 +23,11 @@ export default async function connectToRabbitMQ() {
     const mainArgsForJobDescriptionEmbeddingsQueue = {
       "x-dead-letter-exchange": "worker_failure_exchange",
       "x-dead-letter-routing-key": "job_description_embeddings.failure",
+    };
+
+    const mainArgsForJobRecommendationQueue = {
+      "x-dead-letter-exchange": "worker_failure_exchange",
+      "x-dead-letter-routing-key": "job_recommendation.failure",
     };
 
     const mainArgsForCompanyKbEmbeddingsQueue = {
@@ -49,6 +54,7 @@ export default async function connectToRabbitMQ() {
     await channel.assertQueue(SPEECH_TO_TEXT_QUEUE, { durable: true, arguments: mainArgs });
     await channel.assertQueue(CANDIDATE_PROFILE_EMBEDDINGS_QUEUE, { durable: true, arguments: mainArgsForCandidateProfileEmbeddingsQueue });
     await channel.assertQueue(JOB_DESCRIPTION_EMBEDDINGS_QUEUE, { durable: true, arguments: mainArgsForJobDescriptionEmbeddingsQueue });
+    await channel.assertQueue(JOB_RECOMMENDATION_QUEUE, { durable: true, arguments: mainArgsForJobRecommendationQueue });
     await channel.assertQueue(COMPANY_KB_EMBEDDINGS_QUEUE, { durable: true, arguments: mainArgsForCompanyKbEmbeddingsQueue });
     await channel.assertQueue(LIVENESS_CHECK_QUEUE, { durable: true });
     await channel.assertQueue(SEND_HIRING_EMAIL_QUEUE, { durable: true, arguments: mainArgsForSendHiringEmailQueue });

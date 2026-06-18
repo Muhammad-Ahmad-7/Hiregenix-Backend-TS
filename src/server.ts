@@ -8,6 +8,7 @@ import connectToRabbitMQ from "./config/rabbitmq.js";
 import interviewReminderJob from "./cron/interviewCron.js";
 import { initializeSocket } from "./utils/socket.js";
 import jobDeadlinePassedJob from "./cron/jobDeadlinePassedCron.js";
+import jobRecommendationJob from "./cron/jobRecommendationCron.js";
 
 dotenv.config();
 
@@ -28,6 +29,9 @@ interviewReminderJob();
 
 // Start the job deadline passed job
 jobDeadlinePassedJob();
+
+// Start the job recommendation job
+jobRecommendationJob();
 
 connectDB()
   .then(() => {
