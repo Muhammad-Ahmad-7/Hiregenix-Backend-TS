@@ -1,24 +1,31 @@
 import cron from "node-cron";
+import { DateTime } from "luxon";
 import { InterviewModel, IInterview } from "../models/interview.model.js";
 import { EmailService } from "../services/email.service.js";
 import { TIMEZONE } from "../utils/constant.js";
 
 const interviewReminderJob = (): void => {
-    // Runs every day at midnight (server local time)
+    // Runs every day at midnight in the configured timezone.
     cron.schedule("0 0 * * *", async (): Promise<void> => {
         console.log(`[CRON] Running interview reminder job (UTC): ${new Date().toISOString()}`);
 
-        // Get tomorrow's date range
-        const now = new Date();
-        const tomorrow = new Date(now);
-        tomorrow.setDate(now.getDate() + 1);
+        const startOfTomorrow = DateTime.now()
+            .setZone(TIMEZONE)
+            .plus({ days: 1 })
+            .startOf("day");
 
-        const startOfTomorrow = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
-        const endOfTomorrow = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 23, 59, 59, 999);
+        const endOfTomorrow = startOfTomorrow.endOf("day");
+        const startOfTomorrowUtc = startOfTomorrow.toUTC().toJSDate();
+        const endOfTomorrowUtc = endOfTomorrow.toUTC().toJSDate();
+
+        console.log(
+            `[CRON] Interview reminder query range (${TIMEZONE}): ${startOfTomorrow.toISO()} to ${endOfTomorrow.toISO()} | UTC: ${startOfTomorrowUtc.toISOString()} to ${endOfTomorrowUtc.toISOString()}`
+        );
 
         // Fetch interviews scheduled for tomorrow
         const interviews: IInterview[] = await InterviewModel.find({
-            scheduledDate: { $gte: startOfTomorrow, $lte: endOfTomorrow }
+            scheduledDate: { $gte: startOfTomorrowUtc, $lte: endOfTomorrowUtc },
+            status: "scheduled",
         })
             .populate("companyId", "companyName")
             .populate({
